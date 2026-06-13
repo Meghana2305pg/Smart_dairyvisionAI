@@ -35,7 +35,7 @@ def get_models() -> dict[str, Any]:
 
 
 def evaluate_models(df: pd.DataFrame, target_column: str = "Total_Milk_Yield") -> pd.DataFrame:
-    features = [c for c in df.columns if c != target_column]
+    features = [c for c in df.columns if c not in {"Sire_ID", target_column}]
     X = df[features].astype(float)
     y = df[target_column].astype(float)
 
@@ -62,7 +62,7 @@ def evaluate_models(df: pd.DataFrame, target_column: str = "Total_Milk_Yield") -
 
 
 def train_models(df: pd.DataFrame, target_column: str = "Total_Milk_Yield") -> dict[str, Any]:
-    features = [c for c in df.columns if c != target_column]
+    features = [c for c in df.columns if c not in {"Sire_ID", target_column}]
     X = df[features].astype(float)
     y = df[target_column].astype(float)
 
@@ -75,11 +75,12 @@ def train_models(df: pd.DataFrame, target_column: str = "Total_Milk_Yield") -> d
 
 
 def get_feature_importances(models: dict[str, Any], df: pd.DataFrame, target_column: str = "Total_Milk_Yield") -> pd.DataFrame:
-    features = [c for c in df.columns if c != target_column]
+    features = [c for c in df.columns if c not in {"Sire_ID", target_column}]
     rows = []
     for name, model in models.items():
         if hasattr(model, "feature_importances_"):
-            importances = model.feature_importances_\n        elif hasattr(model, "coef_"):
+            importances = model.feature_importances_
+        elif hasattr(model, "coef_"):
             importances = np.abs(model.coef_)
         else:
             importances = np.zeros(len(features))

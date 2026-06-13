@@ -8,7 +8,7 @@ REQUIRED_COLUMNS = [
     "Peak_Yield",
     "Days_To_Peak",
     "Lactation_Length",
-    "Corrected_Milk",
+    "Corrected_Milk_Yield",
     "Dry_Days",
     "Total_Milk_Yield",
 ]
@@ -19,8 +19,14 @@ def _default_data_path() -> str:
 
 
 def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    lower_map = {c.lower(): c for c in df.columns}
-    normalized = df.rename(columns={k: lower_map[k.lower()] for k in lower_map})
+    normalized = df.rename(columns={col.strip(): col.strip() for col in df.columns})
+    canonical = {}
+    for col in normalized.columns:
+        key = col.strip().lower().replace(" ", "_")
+        canonical[key] = col
+
+    if "corrected_milk" in canonical and "corrected_milk_yield" not in canonical:
+        normalized = normalized.rename(columns={canonical["corrected_milk"]: "Corrected_Milk_Yield"})
     return normalized
 
 
