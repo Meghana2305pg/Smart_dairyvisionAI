@@ -1,0 +1,450 @@
+2026-06-13 20:26:08,590  INFO      
+======================================================================
+  STEP 1: Real-time weather fetch (Open-Meteo API)
+======================================================================
+2026-06-13 20:26:08,591  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
+2026-06-13 20:26:10,544  INFO      [Weather] OK  — Temp: 23.8°C  Humidity: 90.0%
+2026-06-13 20:26:10,546  INFO      Ambient conditions: 23.8°C  90.0% RH
+2026-06-13 20:26:10,546  INFO      
+======================================================================
+  STEP 2: Data loading, merging & cleaning
+======================================================================
+2026-06-13 20:26:10,560  INFO      Disease dataset  : 3000 rows × 6 cols
+2026-06-13 20:26:10,561  INFO      Yield dataset    : 3000 rows × 4 cols
+2026-06-13 20:26:10,565  INFO      After inner join : 3000 rows × 9 cols
+2026-06-13 20:26:10,570  INFO      Health label: 35.2% diseased
+2026-06-13 20:26:10,576  INFO      After clean      : 3000 rows (dropped 0)
+2026-06-13 20:26:10,577  INFO      
+======================================================================
+  STEP 3: Feature engineering (THI, feed/weight ratio, weather)
+======================================================================
+2026-06-13 20:26:10,592  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
+2026-06-13 20:26:10,598  INFO      THI range        : 33.4 – 94.8  (mean 58.3)
+2026-06-13 20:26:10,601  INFO      THI stress dist  :
+thi
+No Stress    1701
+Mild          708
+Moderate      392
+Severe        158
+Emergency      41
+2026-06-13 20:26:10,601  INFO      
+New engineered features created:
+2026-06-13 20:26:10,602  INFO        feed_per_weight          : mean=0.0430  std=0.0120
+2026-06-13 20:26:10,602  INFO        temp_humidity            : mean=2488.3343  std=738.2167
+2026-06-13 20:26:10,603  INFO        thi_squared              : mean=3566.9015  std=1602.4610
+2026-06-13 20:26:10,603  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
+2026-06-13 20:26:10,604  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
+2026-06-13 20:26:10,608  INFO      Feature matrix   : 3000 rows × 13 cols
+2026-06-13 20:26:10,609  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
+2026-06-13 20:26:10,670  INFO      Engineered dataset saved -> C:\Users\megha\Downloads\smart_dairy_digital_twin\smart_dairy_twin_packaged\outputs\engineered_dataset.csv
+2026-06-13 20:26:10,671  INFO      Final feature matrix: 3000 rows × 13 features
+2026-06-13 20:26:10,671  INFO      Features: ['age', 'weight', 'health_status', 'feed', 'temperature', 'humidity', 'thi', 'feed_weight_ratio', 'feed_per_weight', 'temp_humidity', 'thi_squared', 'feed_thi_interaction', 'age_weight_ratio']
+2026-06-13 20:26:10,671  INFO      
+======================================================================
+  STEP 4: Cross-validated model training + statistical selection
+======================================================================
+2026-06-13 20:26:16,660  INFO      === Loading data ===
+2026-06-13 20:26:16,681  INFO      Disease dataset  : 3000 rows × 6 cols
+2026-06-13 20:26:16,682  INFO      Yield dataset    : 3000 rows × 4 cols
+2026-06-13 20:26:16,688  INFO      After inner join : 3000 rows × 9 cols
+2026-06-13 20:26:16,691  INFO      Health label: 35.2% diseased
+2026-06-13 20:26:16,699  INFO      After clean      : 3000 rows (dropped 0)
+2026-06-13 20:26:16,700  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
+2026-06-13 20:26:18,533  INFO      [Weather] OK  — Temp: 23.8°C  Humidity: 90.0%
+2026-06-13 20:26:18,562  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
+2026-06-13 20:26:18,573  INFO      THI range        : 33.4 – 94.8  (mean 58.3)
+2026-06-13 20:26:18,580  INFO      THI stress dist  :
+thi
+No Stress    1701
+Mild          708
+Moderate      392
+Severe        158
+Emergency      41
+2026-06-13 20:26:18,580  INFO      
+New engineered features created:
+2026-06-13 20:26:18,581  INFO        feed_per_weight          : mean=0.0430  std=0.0120
+2026-06-13 20:26:18,584  INFO        temp_humidity            : mean=2488.3343  std=738.2167
+2026-06-13 20:26:18,585  INFO        thi_squared              : mean=3566.9015  std=1602.4610
+2026-06-13 20:26:18,586  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
+2026-06-13 20:26:18,587  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
+2026-06-13 20:26:18,598  INFO      Feature matrix   : 3000 rows × 13 cols
+2026-06-13 20:26:18,600  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
+2026-06-13 20:26:18,684  INFO      Engineered dataset saved -> C:\Users\megha\Downloads\smart_dairy_digital_twin\smart_dairy_twin_packaged\outputs\engineered_dataset.csv
+2026-06-13 20:26:18,684  INFO      Features  : ['age', 'weight', 'health_status', 'feed', 'temperature', 'humidity', 'thi', 'feed_weight_ratio', 'feed_per_weight', 'temp_humidity', 'thi_squared', 'feed_thi_interaction', 'age_weight_ratio']
+2026-06-13 20:26:18,684  INFO      Samples   : 3000
+2026-06-13 20:26:18,686  INFO      Target    : mean=21.20  std=2.78
+2026-06-13 20:26:18,687  INFO      === 5-fold cross-validation ===
+2026-06-13 20:26:18,722  INFO        Naive Baseline         R²=-0.0042 ± 0.0036   MAE=2.234 ± 0.069   RMSE=2.784 ± 0.075
+2026-06-13 20:26:18,805  INFO        Linear Regression      R²=0.1594 ± 0.0184   MAE=2.017 ± 0.056   RMSE=2.547 ± 0.062
+2026-06-13 20:26:19,039  INFO        Decision Tree          R²=0.0142 ± 0.0202   MAE=2.190 ± 0.089   RMSE=2.759 ± 0.083
+2026-06-13 20:26:23,609  INFO        Random Forest          R²=0.1340 ± 0.0245   MAE=2.052 ± 0.082   RMSE=2.586 ± 0.088
+2026-06-13 20:26:25,404  INFO        XGBoost                R²=0.1222 ± 0.0151   MAE=2.065 ± 0.074   RMSE=2.603 ± 0.080
+2026-06-13 20:26:25,428  INFO      
+=== Model ranking by mean CV R² ===
+                       mean       std
+Model                                
+Linear Regression  0.159384  0.020623
+Random Forest      0.134025  0.027401
+XGBoost            0.122165  0.016859
+Decision Tree      0.014180  0.022555
+Naive Baseline    -0.004192  0.004017
+2026-06-13 20:26:25,430  INFO      
+=== Wilcoxon signed-rank test (best vs. others) ===
+2026-06-13 20:26:25,452  INFO      
+Best model: Linear Regression
+2026-06-13 20:26:25,473  INFO      
+======================================================================
+  STEP 5: Model evaluation, diagnostics & plots
+======================================================================
+2026-06-13 20:26:26,152  INFO      === Loading data ===
+2026-06-13 20:26:26,173  INFO      Disease dataset  : 3000 rows × 6 cols
+2026-06-13 20:26:26,173  INFO      Yield dataset    : 3000 rows × 4 cols
+2026-06-13 20:26:26,175  INFO      After inner join : 3000 rows × 9 cols
+2026-06-13 20:26:26,179  INFO      Health label: 35.2% diseased
+2026-06-13 20:26:26,186  INFO      After clean      : 3000 rows (dropped 0)
+2026-06-13 20:26:26,188  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
+2026-06-13 20:26:27,970  INFO      [Weather] OK  — Temp: 23.8°C  Humidity: 90.0%
+2026-06-13 20:26:27,996  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
+2026-06-13 20:26:28,009  INFO      THI range        : 33.4 – 94.8  (mean 58.3)
+2026-06-13 20:26:28,016  INFO      THI stress dist  :
+thi
+No Stress    1701
+Mild          708
+Moderate      392
+Severe        158
+Emergency      41
+2026-06-13 20:26:28,016  INFO      
+New engineered features created:
+2026-06-13 20:26:28,018  INFO        feed_per_weight          : mean=0.0430  std=0.0120
+2026-06-13 20:26:28,019  INFO        temp_humidity            : mean=2488.3343  std=738.2167
+2026-06-13 20:26:28,022  INFO        thi_squared              : mean=3566.9015  std=1602.4610
+2026-06-13 20:26:28,023  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
+2026-06-13 20:26:28,024  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
+2026-06-13 20:26:28,032  INFO      Feature matrix   : 3000 rows × 13 cols
+2026-06-13 20:26:28,034  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
+2026-06-13 20:26:28,131  INFO      Engineered dataset saved -> C:\Users\megha\Downloads\smart_dairy_digital_twin\smart_dairy_twin_packaged\outputs\engineered_dataset.csv
+2026-06-13 20:26:28,165  INFO      Loaded model: LinearRegression
+2026-06-13 20:26:28,179  INFO      === Hold-out test metrics ===
+2026-06-13 20:26:28,179  INFO        MAE          : 2.0379
+2026-06-13 20:26:28,181  INFO        RMSE         : 2.5809
+2026-06-13 20:26:28,181  INFO        R2           : 0.1840
+2026-06-13 20:26:28,182  INFO        MAPE_pct     : 9.8757
+2026-06-13 20:26:38,366  INFO      Feature importance (permutation):
+                      Perm_mean  Perm_std
+weight                 0.453176  0.039600
+age_weight_ratio       0.168451  0.022317
+age                    0.048693  0.009950
+feed_thi_interaction   0.027094  0.006074
+humidity               0.024044  0.010427
+temp_humidity          0.017097  0.010172
+thi                    0.014866  0.004463
+temperature            0.013707  0.004599
+feed                   0.002504  0.002851
+thi_squared            0.000680  0.004552
+feed_per_weight        0.000149  0.000200
+feed_weight_ratio      0.000149  0.000200
+health_status         -0.000159  0.000711
+2026-06-13 20:26:38,958  INFO      Chromium init'ed with kwargs {}
+2026-06-13 20:26:38,960  INFO      Found chromium path: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-06-13 20:26:38,963  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpyc5w5fvu.
+2026-06-13 20:26:38,968  INFO      Opening browser.
+2026-06-13 20:26:38,976  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpivolok1p.
+2026-06-13 20:26:38,976  INFO      Temporary directory at: C:\Users\megha\AppData\Local\Temp\tmpivolok1p
+2026-06-13 20:26:40,424  INFO      Conforming 1 to file:///C:/Users/megha/AppData/Local/Temp/tmpyc5w5fvu/index.html
+2026-06-13 20:26:40,426  INFO      Waiting on all navigates
+2026-06-13 20:26:44,373  INFO      All navigates done, putting them all in queue.
+2026-06-13 20:26:44,379  INFO      Getting tab from queue (has 1)
+2026-06-13 20:26:44,381  INFO      Got B99A
+2026-06-13 20:26:44,383  INFO      Processing Predicted_vs_Actual_Milk_Yield__LinearRegression__R01840.png
+2026-06-13 20:26:44,385  INFO      Sending big command for Predicted_vs_Actual_Milk_Yield__LinearRegression__R01840.png.
+2026-06-13 20:26:44,734  INFO      Sent big command for Predicted_vs_Actual_Milk_Yield__LinearRegression__R01840.png.
+2026-06-13 20:26:44,737  INFO      Reloading tab B99A before return.
+2026-06-13 20:26:44,996  INFO      Putting tab B99A back (queue size: 0).
+2026-06-13 20:26:44,999  INFO      Waiting for all cleanups to finish.
+2026-06-13 20:26:45,000  INFO      Exiting Kaleido
+2026-06-13 20:26:45,002  INFO      Closing browser.
+2026-06-13 20:26:45,014  INFO      Closing browser.
+2026-06-13 20:26:45,022  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:45,027  INFO      shutil.rmtree worked.
+2026-06-13 20:26:45,029  INFO      Cancelling tasks.
+2026-06-13 20:26:45,034  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:26:45,410  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:45,411  INFO      shutil.rmtree worked.
+2026-06-13 20:26:45,411  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:45,413  INFO      shutil.rmtree worked.
+2026-06-13 20:26:45,414  INFO      Cancelling tasks.
+2026-06-13 20:26:45,414  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:26:45,461  INFO      Chromium init'ed with kwargs {}
+2026-06-13 20:26:45,464  INFO      Found chromium path: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-06-13 20:26:45,467  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpn695tugp.
+2026-06-13 20:26:45,472  INFO      Opening browser.
+2026-06-13 20:26:45,474  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpg1s0bnpz.
+2026-06-13 20:26:45,476  INFO      Temporary directory at: C:\Users\megha\AppData\Local\Temp\tmpg1s0bnpz
+2026-06-13 20:26:46,289  INFO      Conforming 1 to file:///C:/Users/megha/AppData/Local/Temp/tmpn695tugp/index.html
+2026-06-13 20:26:46,292  INFO      Waiting on all navigates
+2026-06-13 20:26:48,713  INFO      All navigates done, putting them all in queue.
+2026-06-13 20:26:48,720  INFO      Getting tab from queue (has 1)
+2026-06-13 20:26:48,722  INFO      Got 568E
+2026-06-13 20:26:48,724  INFO      Processing Residuals_vs_Fitted__LinearRegression.png
+2026-06-13 20:26:48,724  INFO      Sending big command for Residuals_vs_Fitted__LinearRegression.png.
+2026-06-13 20:26:48,960  INFO      Sent big command for Residuals_vs_Fitted__LinearRegression.png.
+2026-06-13 20:26:48,962  INFO      Reloading tab 568E before return.
+2026-06-13 20:26:49,221  INFO      Putting tab 568E back (queue size: 0).
+2026-06-13 20:26:49,224  INFO      Waiting for all cleanups to finish.
+2026-06-13 20:26:49,225  INFO      Exiting Kaleido
+2026-06-13 20:26:49,226  INFO      Closing browser.
+2026-06-13 20:26:49,234  INFO      Closing browser.
+2026-06-13 20:26:49,241  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:49,243  INFO      shutil.rmtree worked.
+2026-06-13 20:26:49,245  INFO      Cancelling tasks.
+2026-06-13 20:26:49,247  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:26:49,606  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:49,607  INFO      shutil.rmtree worked.
+2026-06-13 20:26:49,607  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:49,608  INFO      shutil.rmtree worked.
+2026-06-13 20:26:49,608  INFO      Cancelling tasks.
+2026-06-13 20:26:49,608  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:26:49,701  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:49,702  INFO      shutil.rmtree worked.
+2026-06-13 20:26:49,703  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:49,703  INFO      shutil.rmtree worked.
+2026-06-13 20:26:50,587  INFO      Chromium init'ed with kwargs {}
+2026-06-13 20:26:50,589  INFO      Found chromium path: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-06-13 20:26:50,590  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpcu3mdpm2.
+2026-06-13 20:26:50,593  INFO      Opening browser.
+2026-06-13 20:26:50,598  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmp9nmfiu_k.
+2026-06-13 20:26:50,599  INFO      Temporary directory at: C:\Users\megha\AppData\Local\Temp\tmp9nmfiu_k
+2026-06-13 20:26:51,325  INFO      Conforming 1 to file:///C:/Users/megha/AppData/Local/Temp/tmpcu3mdpm2/index.html
+2026-06-13 20:26:51,327  INFO      Waiting on all navigates
+2026-06-13 20:26:53,664  INFO      All navigates done, putting them all in queue.
+2026-06-13 20:26:53,670  INFO      Getting tab from queue (has 1)
+2026-06-13 20:26:53,671  INFO      Got 9EEB
+2026-06-13 20:26:53,674  INFO      Processing Residual_Distribution__LinearRegression.png
+2026-06-13 20:26:53,675  INFO      Sending big command for Residual_Distribution__LinearRegression.png.
+2026-06-13 20:26:53,891  INFO      Sent big command for Residual_Distribution__LinearRegression.png.
+2026-06-13 20:26:53,893  INFO      Reloading tab 9EEB before return.
+2026-06-13 20:26:54,110  INFO      Putting tab 9EEB back (queue size: 0).
+2026-06-13 20:26:54,110  INFO      Waiting for all cleanups to finish.
+2026-06-13 20:26:54,111  INFO      Exiting Kaleido
+2026-06-13 20:26:54,111  INFO      Closing browser.
+2026-06-13 20:26:54,127  INFO      Closing browser.
+2026-06-13 20:26:54,132  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:54,137  INFO      shutil.rmtree worked.
+2026-06-13 20:26:54,138  INFO      Cancelling tasks.
+2026-06-13 20:26:54,139  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:26:54,468  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:54,468  INFO      shutil.rmtree worked.
+2026-06-13 20:26:54,469  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:54,470  INFO      shutil.rmtree worked.
+2026-06-13 20:26:54,470  INFO      Cancelling tasks.
+2026-06-13 20:26:54,470  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:26:54,492  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:54,493  INFO      shutil.rmtree worked.
+2026-06-13 20:26:54,503  INFO      Chromium init'ed with kwargs {}
+2026-06-13 20:26:54,505  INFO      Found chromium path: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-06-13 20:26:54,507  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpv6kvain8.
+2026-06-13 20:26:54,512  INFO      Opening browser.
+2026-06-13 20:26:54,515  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpjz74ahut.
+2026-06-13 20:26:54,516  INFO      Temporary directory at: C:\Users\megha\AppData\Local\Temp\tmpjz74ahut
+2026-06-13 20:26:55,288  INFO      Conforming 1 to file:///C:/Users/megha/AppData/Local/Temp/tmpv6kvain8/index.html
+2026-06-13 20:26:55,288  INFO      Waiting on all navigates
+2026-06-13 20:26:57,482  INFO      All navigates done, putting them all in queue.
+2026-06-13 20:26:57,485  INFO      Getting tab from queue (has 1)
+2026-06-13 20:26:57,486  INFO      Got 042E
+2026-06-13 20:26:57,486  INFO      Processing Permutation_Feature_Importance__LinearRegression.png
+2026-06-13 20:26:57,486  INFO      Sending big command for Permutation_Feature_Importance__LinearRegression.png.
+2026-06-13 20:26:57,801  INFO      Sent big command for Permutation_Feature_Importance__LinearRegression.png.
+2026-06-13 20:26:57,802  INFO      Reloading tab 042E before return.
+2026-06-13 20:26:57,970  INFO      Putting tab 042E back (queue size: 0).
+2026-06-13 20:26:57,971  INFO      Waiting for all cleanups to finish.
+2026-06-13 20:26:57,973  INFO      Exiting Kaleido
+2026-06-13 20:26:57,973  INFO      Closing browser.
+2026-06-13 20:26:57,983  INFO      Closing browser.
+2026-06-13 20:26:57,987  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:57,992  INFO      shutil.rmtree worked.
+2026-06-13 20:26:57,993  INFO      Cancelling tasks.
+2026-06-13 20:26:57,995  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:26:58,320  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:58,320  INFO      shutil.rmtree worked.
+2026-06-13 20:26:58,320  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:58,321  INFO      shutil.rmtree worked.
+2026-06-13 20:26:58,321  INFO      Cancelling tasks.
+2026-06-13 20:26:58,321  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:26:58,395  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:26:58,396  INFO      shutil.rmtree worked.
+2026-06-13 20:26:58,471  INFO      Chromium init'ed with kwargs {}
+2026-06-13 20:26:58,472  INFO      Found chromium path: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-06-13 20:26:58,473  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpw1p4tj_l.
+2026-06-13 20:26:58,475  INFO      Opening browser.
+2026-06-13 20:26:58,480  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpkcb4zt7q.
+2026-06-13 20:26:58,481  INFO      Temporary directory at: C:\Users\megha\AppData\Local\Temp\tmpkcb4zt7q
+2026-06-13 20:26:59,208  INFO      Conforming 1 to file:///C:/Users/megha/AppData/Local/Temp/tmpw1p4tj_l/index.html
+2026-06-13 20:26:59,213  INFO      Waiting on all navigates
+2026-06-13 20:27:01,573  INFO      All navigates done, putting them all in queue.
+2026-06-13 20:27:01,577  INFO      Getting tab from queue (has 1)
+2026-06-13 20:27:01,577  INFO      Got F4E7
+2026-06-13 20:27:01,578  INFO      Processing Cross_Validated_R_Distribution_by_Model_5_Fold.png
+2026-06-13 20:27:01,579  INFO      Sending big command for Cross_Validated_R_Distribution_by_Model_5_Fold.png.
+2026-06-13 20:27:01,743  INFO      Sent big command for Cross_Validated_R_Distribution_by_Model_5_Fold.png.
+2026-06-13 20:27:01,745  INFO      Reloading tab F4E7 before return.
+2026-06-13 20:27:01,942  INFO      Putting tab F4E7 back (queue size: 0).
+2026-06-13 20:27:01,942  INFO      Waiting for all cleanups to finish.
+2026-06-13 20:27:01,943  INFO      Exiting Kaleido
+2026-06-13 20:27:01,943  INFO      Closing browser.
+2026-06-13 20:27:01,953  INFO      Closing browser.
+2026-06-13 20:27:01,964  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:01,969  INFO      shutil.rmtree worked.
+2026-06-13 20:27:01,971  INFO      Cancelling tasks.
+2026-06-13 20:27:01,973  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:27:02,255  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:02,256  INFO      shutil.rmtree worked.
+2026-06-13 20:27:02,256  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:02,257  INFO      shutil.rmtree worked.
+2026-06-13 20:27:02,257  INFO      Cancelling tasks.
+2026-06-13 20:27:02,257  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:27:02,269  INFO      
+======================================================================
+  STEP 6: Digital twin what-if simulation
+======================================================================
+2026-06-13 20:27:02,276  INFO      === Building feature matrix ===
+2026-06-13 20:27:02,298  INFO      Disease dataset  : 3000 rows × 6 cols
+2026-06-13 20:27:02,298  INFO      Yield dataset    : 3000 rows × 4 cols
+2026-06-13 20:27:02,302  INFO      After inner join : 3000 rows × 9 cols
+2026-06-13 20:27:02,306  INFO      Health label: 35.2% diseased
+2026-06-13 20:27:02,313  INFO      After clean      : 3000 rows (dropped 0)
+2026-06-13 20:27:02,314  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
+2026-06-13 20:27:04,117  INFO      [Weather] OK  — Temp: 23.8°C  Humidity: 90.0%
+2026-06-13 20:27:04,147  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
+2026-06-13 20:27:04,160  INFO      THI range        : 33.4 – 94.8  (mean 58.3)
+2026-06-13 20:27:04,168  INFO      THI stress dist  :
+thi
+No Stress    1701
+Mild          708
+Moderate      392
+Severe        158
+Emergency      41
+2026-06-13 20:27:04,169  INFO      
+New engineered features created:
+2026-06-13 20:27:04,170  INFO        feed_per_weight          : mean=0.0430  std=0.0120
+2026-06-13 20:27:04,172  INFO        temp_humidity            : mean=2488.3343  std=738.2167
+2026-06-13 20:27:04,174  INFO        thi_squared              : mean=3566.9015  std=1602.4610
+2026-06-13 20:27:04,177  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
+2026-06-13 20:27:04,178  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
+2026-06-13 20:27:04,185  INFO      Feature matrix   : 3000 rows × 13 cols
+2026-06-13 20:27:04,187  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
+2026-06-13 20:27:04,275  INFO      Engineered dataset saved -> C:\Users\megha\Downloads\smart_dairy_digital_twin\smart_dairy_twin_packaged\outputs\engineered_dataset.csv
+2026-06-13 20:27:04,278  INFO      Loaded best model: LinearRegression
+2026-06-13 20:27:04,279  INFO      === Fitting interval RF ===
+2026-06-13 20:27:05,527  INFO      Interval RF fitted  — OOB R²=0.0000 (if oob_score=True)
+2026-06-13 20:27:05,527  INFO      === Running simulation grid ===
+2026-06-13 20:27:05,527  INFO        Feed range : [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34] kg
+2026-06-13 20:27:05,528  INFO        Temp range : [18, 24, 30, 36, 42] °C
+2026-06-13 20:27:07,694  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:07,697  INFO      shutil.rmtree worked.
+2026-06-13 20:27:16,182  INFO      Simulation complete — 65 grid points
+2026-06-13 20:27:16,224  INFO      Monotonicity check:
+ Temp_C  N_violations  Monotone  Max_reversal
+     18            12     False         0.046
+     24            12     False         0.046
+     30            12     False         0.046
+     36            12     False         0.046
+     42            12     False         0.046
+2026-06-13 20:27:16,237  INFO      === Generating plots ===
+2026-06-13 20:27:16,299  INFO      Chromium init'ed with kwargs {}
+2026-06-13 20:27:16,301  INFO      Found chromium path: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-06-13 20:27:16,302  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpt8llwlof.
+2026-06-13 20:27:16,304  INFO      Opening browser.
+2026-06-13 20:27:16,306  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpv06zxouh.
+2026-06-13 20:27:16,306  INFO      Temporary directory at: C:\Users\megha\AppData\Local\Temp\tmpv06zxouh
+2026-06-13 20:27:17,058  INFO      Conforming 1 to file:///C:/Users/megha/AppData/Local/Temp/tmpt8llwlof/index.html
+2026-06-13 20:27:17,065  INFO      Waiting on all navigates
+2026-06-13 20:27:19,828  INFO      All navigates done, putting them all in queue.
+2026-06-13 20:27:19,837  INFO      Getting tab from queue (has 1)
+2026-06-13 20:27:19,838  INFO      Got 8B41
+2026-06-13 20:27:19,841  INFO      Processing Digital_Twin_Simulation_Feed_Intake_vs_Milk_Yield_90_PI_shaded.png
+2026-06-13 20:27:19,843  INFO      Sending big command for Digital_Twin_Simulation_Feed_Intake_vs_Milk_Yield_90_PI_shaded.png.
+2026-06-13 20:27:20,253  INFO      Sent big command for Digital_Twin_Simulation_Feed_Intake_vs_Milk_Yield_90_PI_shaded.png.
+2026-06-13 20:27:20,255  INFO      Reloading tab 8B41 before return.
+2026-06-13 20:27:20,432  INFO      Putting tab 8B41 back (queue size: 0).
+2026-06-13 20:27:20,432  INFO      Waiting for all cleanups to finish.
+2026-06-13 20:27:20,433  INFO      Exiting Kaleido
+2026-06-13 20:27:20,433  INFO      Closing browser.
+2026-06-13 20:27:20,441  INFO      Closing browser.
+2026-06-13 20:27:20,444  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:20,447  INFO      shutil.rmtree worked.
+2026-06-13 20:27:20,448  INFO      Cancelling tasks.
+2026-06-13 20:27:20,449  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:27:21,110  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:21,110  INFO      shutil.rmtree worked.
+2026-06-13 20:27:21,111  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:21,113  INFO      shutil.rmtree worked.
+2026-06-13 20:27:21,115  INFO      Cancelling tasks.
+2026-06-13 20:27:21,116  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:27:21,248  INFO      Chromium init'ed with kwargs {}
+2026-06-13 20:27:21,250  INFO      Found chromium path: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-06-13 20:27:21,251  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmp5u5pdz4p.
+2026-06-13 20:27:21,255  INFO      Opening browser.
+2026-06-13 20:27:21,260  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmp3x0omekq.
+2026-06-13 20:27:21,261  INFO      Temporary directory at: C:\Users\megha\AppData\Local\Temp\tmp3x0omekq
+2026-06-13 20:27:22,212  INFO      Conforming 1 to file:///C:/Users/megha/AppData/Local/Temp/tmp5u5pdz4p/index.html
+2026-06-13 20:27:22,219  INFO      Waiting on all navigates
+2026-06-13 20:27:24,823  INFO      All navigates done, putting them all in queue.
+2026-06-13 20:27:24,824  INFO      Getting tab from queue (has 1)
+2026-06-13 20:27:24,825  INFO      Got EECF
+2026-06-13 20:27:24,825  INFO      Processing Predicted_Milk_Yield_Heatmap_Temperature__Feed_Grid.png
+2026-06-13 20:27:24,825  INFO      Sending big command for Predicted_Milk_Yield_Heatmap_Temperature__Feed_Grid.png.
+2026-06-13 20:27:25,087  INFO      Sent big command for Predicted_Milk_Yield_Heatmap_Temperature__Feed_Grid.png.
+2026-06-13 20:27:25,088  INFO      Reloading tab EECF before return.
+2026-06-13 20:27:25,269  INFO      Putting tab EECF back (queue size: 0).
+2026-06-13 20:27:25,269  INFO      Waiting for all cleanups to finish.
+2026-06-13 20:27:25,270  INFO      Exiting Kaleido
+2026-06-13 20:27:25,270  INFO      Closing browser.
+2026-06-13 20:27:25,277  INFO      Closing browser.
+2026-06-13 20:27:25,284  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:25,289  INFO      shutil.rmtree worked.
+2026-06-13 20:27:25,291  INFO      Cancelling tasks.
+2026-06-13 20:27:25,292  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:27:25,617  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:25,617  INFO      shutil.rmtree worked.
+2026-06-13 20:27:25,618  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:25,618  INFO      shutil.rmtree worked.
+2026-06-13 20:27:25,619  INFO      Cancelling tasks.
+2026-06-13 20:27:25,619  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:27:25,695  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:25,696  INFO      shutil.rmtree worked.
+2026-06-13 20:27:25,696  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:25,697  INFO      shutil.rmtree worked.
+2026-06-13 20:27:25,707  INFO      Chromium init'ed with kwargs {}
+2026-06-13 20:27:25,709  INFO      Found chromium path: C:\Program Files\Google\Chrome\Application\chrome.exe
+2026-06-13 20:27:25,710  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmpv1ekceci.
+2026-06-13 20:27:25,712  INFO      Opening browser.
+2026-06-13 20:27:25,715  INFO      Temp directory created: C:\Users\megha\AppData\Local\Temp\tmp_k4cif1j.
+2026-06-13 20:27:25,716  INFO      Temporary directory at: C:\Users\megha\AppData\Local\Temp\tmp_k4cif1j
+2026-06-13 20:27:26,793  INFO      Conforming 1 to file:///C:/Users/megha/AppData/Local/Temp/tmpv1ekceci/index.html
+2026-06-13 20:27:26,793  INFO      Waiting on all navigates
+2026-06-13 20:27:30,765  INFO      All navigates done, putting them all in queue.
+2026-06-13 20:27:30,774  INFO      Getting tab from queue (has 1)
+2026-06-13 20:27:30,774  INFO      Got B38B
+2026-06-13 20:27:30,775  INFO      Processing THI_vs_Milk_Yield_at_Feed__22_kgday_90_PI.png
+2026-06-13 20:27:30,775  INFO      Sending big command for THI_vs_Milk_Yield_at_Feed__22_kgday_90_PI.png.
+2026-06-13 20:27:31,120  INFO      Sent big command for THI_vs_Milk_Yield_at_Feed__22_kgday_90_PI.png.
+2026-06-13 20:27:31,121  INFO      Reloading tab B38B before return.
+2026-06-13 20:27:31,342  INFO      Putting tab B38B back (queue size: 0).
+2026-06-13 20:27:31,343  INFO      Waiting for all cleanups to finish.
+2026-06-13 20:27:31,344  INFO      Exiting Kaleido
+2026-06-13 20:27:31,345  INFO      Closing browser.
+2026-06-13 20:27:31,352  INFO      Closing browser.
+2026-06-13 20:27:31,357  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:31,358  INFO      shutil.rmtree worked.
+2026-06-13 20:27:31,359  INFO      Cancelling tasks.
+2026-06-13 20:27:31,360  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:27:32,104  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:32,106  INFO      shutil.rmtree worked.
+2026-06-13 20:27:32,106  INFO      TemporaryDirectory.cleanup() worked.
+2026-06-13 20:27:32,108  INFO      shutil.rmtree worked.
+2026-06-13 20:27:32,108  INFO      Cancelling tasks.
+2026-06-13 20:27:32,108  INFO      Exiting Kaleido/Choreo
+2026-06-13 20:27:32,189  INFO      
+======================================================================
+  STEP 7: Consolidated results for paper
+======================================================================
