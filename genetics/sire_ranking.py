@@ -4,7 +4,9 @@ from typing import Any
 
 import pandas as pd
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "outputs")
+OUTPUT_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "outputs", "genetics")
+)
 
 
 def rank_sires(df: pd.DataFrame,
