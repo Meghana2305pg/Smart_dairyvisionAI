@@ -96,8 +96,32 @@ def main():
     from evaluate import main as eval_main
     eval_main()
 
-    # ── Step 6: Simulation ────────────────────────────────────────────────────
-    step(6, "Digital twin what-if simulation")
+    # ── Explainability: SHAP outputs (saved under outputs/shap/) ───────────────
+    logger.info("Generating SHAP explainability outputs")
+    try:
+        from explainability import generate_shap_reports
+        generate_shap_reports(X, df_full=df_full)
+    except Exception as e:
+        logger.exception("SHAP explainability generation failed: %s", e)
+
+    # ── Step 6: Anomaly detection and reporting ────────────────────────────────
+    step(6, "Anomaly detection and reporting")
+    try:
+        from anomaly_detection import generate_anomaly_reports
+        generate_anomaly_reports(df_full)
+    except Exception as e:
+        logger.exception("Anomaly detection failed: %s", e)
+
+    # ── Step 7: Health alerts and decision support ────────────────────────────
+    step(7, "Health alerts and decision support")
+    try:
+        from health_alerts import generate_health_alerts
+        generate_health_alerts(df_full, base_temp=base_temp, base_hum=base_hum)
+    except Exception as e:
+        logger.exception("Health alert generation failed: %s", e)
+
+    # ── Step 8: Digital twin what-if simulation ───────────────────────────────
+    step(8, "Digital twin what-if simulation")
     from simulate import main as sim_main
     sim_main()
 
@@ -128,6 +152,11 @@ def main():
         "cv_results.csv",
         "test_metrics.csv",
         "feature_importance.csv",
+        "anomaly_report.csv",
+        "anomaly_summary.md",
+        "anomaly_visualization.png",
+        "health_alerts.csv",
+        "health_alert_summary.md",
         "simulation_results.csv",
         "paper_table_model_comparison.csv",
         "predicted_vs_actual.png",
