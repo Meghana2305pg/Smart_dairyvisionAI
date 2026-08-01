@@ -85,15 +85,32 @@ def build_explainability_context(
 
 
 def render_explainability() -> None:
-    """Render the explainability screen with existing SHAP-derived insights."""
+    """Render a human-readable explainability workspace using the existing model and SHAP outputs."""
+    st.markdown(
+        """
+        <style>
+        .explain-shell { padding-top: 0.35rem; }
+        .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.8rem; margin-bottom: 1.2rem; }
+        .panel-card { background: rgba(255,255,255,0.96); border: 1px solid rgba(148,163,184,0.14); border-radius: 18px; box-shadow: 0 10px 22px rgba(15,23,42,0.04); padding: 1rem; }
+        .panel-title { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; margin-bottom: 0.8rem; }
+        .driver-card { background: rgba(248,250,252,0.96); border: 1px solid rgba(148,163,184,0.14); border-radius: 14px; padding: 0.85rem; margin-bottom: 0.75rem; }
+        .driver-value { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.05em; color: #0f172a; }
+        .driver-label { color: #64748b; font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 800; }
+        @media (max-width: 980px) { .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 620px) { .summary-grid { grid-template-columns: 1fr; } }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     cow_service = st.session_state.get("cow_service")
     observation_service = st.session_state.get("observation_service")
     selected_cow_id = st.session_state.get("selected_cow_id")
 
     render_page_header(
-        "Explainable AI Workspace",
-        "Inspect the model's feature contributions and how they shape the current prediction.",
-        badge="Explainability",
+        "Explainability",
+        "Understand how the model is interpreting the current herd conditions and prediction inputs.",
+        badge="AI Insight",
     )
 
     if not selected_cow_id:
@@ -143,50 +160,92 @@ def render_explainability() -> None:
         model_version="1.0.0",
         risk_level="Low" if prediction.get("prediction", 0.0) >= 20 else "High",
     )
-
     summary = context["summary"]
-    col1, col2, col3, col4 = st.columns(4, gap="medium")
-    with col1:
-        info_card("Predicted Milk Yield", f"{summary['predicted_milk_yield']:.1f} L/day")
-    with col2:
-        info_card("Confidence Score", f"{summary['confidence_score']:.2f}")
-    with col3:
-        info_card("Prediction Time", summary["prediction_time"])
-    with col4:
-        info_card("Model Version", summary["model_version"])
 
-    st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
-    risk_col, artifact_col = st.columns([1, 2], gap="medium")
-    with risk_col:
-        info_card("Risk Level", summary["risk_level"])
-    with artifact_col:
-        st.info("SHAP artifacts are sourced from the existing outputs directory when available.", icon="ℹ️")
+    st.markdown('<div class="explain-shell">', unsafe_allow_html=True)
+    st.markdown('<div class="summary-grid">', unsafe_allow_html=True)
+    summary_cards = [
+        ("Predicted Milk Yield", f"{summary['predicted_milk_yield']:.1f} L/day"),
+        ("Prediction Confidence", f"{summary['confidence_score']:.2f}"),
+        ("Health Status", summary["risk_level"]),
+        ("Prediction Time", summary["prediction_time"]),
+    ]
+    for label, value in summary_cards:
+        st.markdown(
+            f"""
+            <div class="panel-card">
+                <div class="panel-title">{label}</div>
+                <div style="font-size: clamp(1.5rem, 1.8vw, 2rem); font-weight: 800; letter-spacing: -0.08em; color: #0f172a;">{value}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    left_col, right_col = st.columns(2, gap="medium")
+    if not explanation:
+        st.info("No explainability output is available for the currently selected cow yet.", icon="ℹ️")
+        st.markdown('</div>', unsafe_allow_html=True)
+        return
+
+    left_col, right_col = st.columns([1.15, 0.85], gap="medium")
     with left_col:
-        render_section_header("SHAP Feature Contributions", "Feature contributions rendered from the existing explainability output.")
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">Feature Importance</div>', unsafe_allow_html=True)
+        st.caption("This chart shows which features are contributing most to the current prediction output.")
         st.plotly_chart(build_shap_bar_chart(explanation), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     with right_col:
-        render_section_header("Feature Contribution Table", "A tabular view of the current feature effects.")
-        st.dataframe(pd.DataFrame(context["feature_table"]), use_container_width=True)
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">Key Drivers</div>', unsafe_allow_html=True)
+        if context["feature_table"]:
+            for row in context["feature_table"][:5]:
+                feature = str(row.get("feature") or "Feature")
+                contribution = float(row.get("contribution") or 0.0)
+                st.markdown(
+                    f"""
+                    <div class="driver-card">
+                        <div class="driver-label">{feature}</div>
+                        <div class="driver-value">{contribution:.3f}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("No influencing features were available for this prediction.", icon="ℹ️")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    explanation_col, comparison_col = st.columns(2, gap="medium")
-    with explanation_col:
-        render_section_header("Human-Readable Explanations", "Plain-language summaries of the current model output.")
-        for item in context["explanations"]:
-            st.info(f"{item['title']}: {item['description']}", icon="💡")
-    with comparison_col:
-        render_section_header("Prediction Comparison", "A quick comparison between the current and reference outputs.")
-        st.metric("Current Prediction", f"{context['comparison']['current_prediction']:.1f} L/day")
-        st.metric("Compared To", f"{context['comparison']['comparison_prediction']:.1f} L/day")
+    rec_col, insight_col = st.columns([1.1, 0.9], gap="medium")
+    with rec_col:
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">Recommendations</div>', unsafe_allow_html=True)
+        if context["explanations"]:
+            for item in context["explanations"]:
+                st.info(f"{item['description']}", icon="💡")
+        else:
+            st.info("No recommendations were generated for the current input set.", icon="ℹ️")
+        st.markdown('</div>', unsafe_allow_html=True)
+    with insight_col:
+        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+        st.markdown('<div class="panel-title">Prediction Comparison</div>', unsafe_allow_html=True)
+        st.metric("Current", f"{context['comparison']['current_prediction']:.1f} L/day")
+        st.metric("Baseline", f"{context['comparison']['comparison_prediction']:.1f} L/day")
         st.metric("Delta", f"{context['comparison']['delta']:.1f} L/day")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    render_section_header("Historical Explainability Timeline", "Track explainability changes over time.")
+    st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+    st.markdown('<div class="panel-title">Contribution Timeline</div>', unsafe_allow_html=True)
+    st.caption("This timeline shows how the strongest feature contributions evolve over the available explainability output.")
     st.plotly_chart(build_contribution_timeline(context["feature_table"]), use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    st.download_button("Download SHAP Report", data=(artifacts.get("report").read_text() if artifacts.get("report") and artifacts.get("report").exists() else "No SHAP report generated yet."), file_name="shap_report.md", mime="text/markdown", use_container_width=True)
-    st.download_button("Export PDF", data="Explainability report", file_name="explainability_report.pdf", mime="application/pdf", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.download_button(
+        "Download SHAP Report",
+        data=(artifacts.get("report").read_text() if artifacts.get("report") and artifacts.get("report").exists() else "No SHAP report generated yet."),
+        file_name="shap_report.md",
+        mime="text/markdown",
+        use_container_width=True,
+    )

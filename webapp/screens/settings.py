@@ -8,53 +8,79 @@ from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def render_settings() -> None:
-    """Render the settings screen."""
-    render_page_header("Settings", "Manage your account and application preferences.", badge="Profile")
+    """Render the settings page as a read-only preferences workspace for existing account and machine state."""
+    st.markdown(
+        """
+        <style>
+        .settings-shell { padding-top: 0.35rem; }
+        .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; margin-bottom: 1rem; }
+        .settings-panel { background: rgba(255,255,255,0.96); border: 1px solid rgba(148,163,184,0.14); border-radius: 18px; padding: 1rem; box-shadow: 0 10px 22px rgba(15,23,42,0.04); margin-top: 1rem; }
+        .settings-title { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; margin-bottom: 0.75rem; }
+        @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    tab1, tab2, tab3 = st.tabs(["Account", "Preferences", "System"])
+    render_page_header("Settings", "Review farm and application preferences for the current DairyVision workspace.", badge="Preferences")
+
+    user = st.session_state.get("user", {})
+    farm = st.session_state.get("farm", {})
+    farm_name = st.session_state.get("farm_name") or farm.get("name") or "No farm selected"
+
+    st.markdown('<div class="settings-shell">', unsafe_allow_html=True)
+
+    st.markdown('<div class="settings-grid">', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="settings-panel">
+            <div class="settings-title">Farm Information</div>
+            <div style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.04em; color: #0f172a;'>{farm_name}</div>
+            <div style='margin-top: 0.8rem; color: #475569;'>Location: {farm.get('location', 'Not set')}</div>
+            <div style='margin-top: 0.3rem; color: #475569;'>Farm ID: {farm.get('farm_id', 'Not set')}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <div class="settings-panel">
+            <div class="settings-title">User Profile</div>
+            <div style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.04em; color: #0f172a;'>{user.get('full_name', 'Current user')}</div>
+            <div style='margin-top: 0.8rem; color: #475569;'>Email: {user.get('email', 'Not set')}</div>
+            <div style='margin-top: 0.3rem; color: #475569;'>Phone: {user.get('phone', 'Not set')}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    tab1, tab2, tab3 = st.tabs(["Application Preferences", "Notifications", "About"])
 
     with tab1:
-        render_section_header("Account Information", "Review the current user profile details.")
-
-        user = st.session_state.get("user", {})
-        col1, col2 = st.columns(2, gap="medium")
-        with col1:
-            info_card("Full Name", user.get("full_name", "Not set"))
-            info_card("Email", user.get("email", "Not set"))
-        with col2:
-            info_card("Phone", user.get("phone", "Not set"))
-            info_card("Status", "Active ✅")
-
-        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-        if st.button("Edit Profile", use_container_width=True):
-            st.info("Profile edit functionality coming soon.")
+        st.markdown('<div class="settings-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="settings-title">Application Preferences</div>', unsafe_allow_html=True)
+        st.selectbox("Theme", ["Light", "Dark", "Auto"], index=0)
+        st.selectbox("Layout Density", ["Comfortable", "Compact"], index=0)
+        st.selectbox("Default Landing Page", ["Dashboard", "Analytics", "Health Alerts"], index=0)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
-        render_section_header("Application Preferences", "Visual and notification preferences for the app.")
-
-        theme = st.selectbox("Theme", ["Light", "Dark", "Auto"], value="Light")
-        notifications = st.checkbox("Enable notifications", value=True)
-        email_alerts = st.checkbox("Email alerts for critical events", value=True)
-        daily_report = st.checkbox("Daily summary report", value=True)
-
-        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-        if st.button("Save Preferences", use_container_width=True):
-            st.success("Preferences saved!")
+        st.markdown('<div class="settings-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="settings-title">Notifications</div>', unsafe_allow_html=True)
+        st.checkbox("Enable notifications", value=True)
+        st.checkbox("Email alerts for critical events", value=True)
+        st.checkbox("Daily summary reports", value=True)
+        st.checkbox("Weekly system health snapshot", value=False)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tab3:
-        render_section_header("System Information", "App and runtime details for quick reference.")
+        st.markdown('<div class="settings-panel">', unsafe_allow_html=True)
+        st.markdown('<div class="settings-title">About</div>', unsafe_allow_html=True)
+        st.write("DairyVision AI")
+        st.write("Application version: 2.3.1")
+        st.write("Model version: v2.3.1")
+        st.write("Environment: Current workspace configuration")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        col1, col2 = st.columns(2, gap="medium")
-        with col1:
-            info_card("App Version", "2.3.1")
-            info_card("Model Version", "v2.3.1")
-        with col2:
-            info_card("API Status", "Operational ✅")
-            info_card("Last Backup", "2 hours ago")
-
-        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-        if st.button("Refresh System", use_container_width=True):
-            st.success("System refreshed!")
-
-        if st.button("Export Data", use_container_width=True):
-            st.info("Data export coming soon.")
+    st.markdown('</div>', unsafe_allow_html=True)

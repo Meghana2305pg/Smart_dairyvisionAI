@@ -168,11 +168,53 @@ def build_analytics_context(
 
 
 def render_analytics() -> None:
-    """Render a production-ready analytics and insights workspace."""
+    """Render a professional executive analytics dashboard based on the live project data."""
     dashboard_service: DashboardService = st.session_state.dashboard_service
     dashboard = dashboard_service.build_dashboard()
     cow_records = dashboard_service.repository.get_cows()
     observations = dashboard_service.repository.get_observations()
+
+    st.markdown(
+        """
+        <style>
+        .analytics-shell { padding-top: 0.35rem; }
+        .analytics-section {
+            background: rgba(255,255,255,0.96);
+            border: 1px solid rgba(148,163,184,0.16);
+            border-radius: 18px;
+            padding: 1rem;
+            margin-top: 1rem;
+            box-shadow: 0 10px 22px rgba(15,23,42,0.04);
+        }
+        .analytics-section-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #475569;
+            margin-bottom: 0.7rem;
+        }
+        .chart-panel {
+            background: rgba(255,255,255,0.96);
+            border: 1px solid rgba(148,163,184,0.16);
+            border-radius: 18px;
+            padding: 0.75rem;
+            min-height: 360px;
+            box-shadow: 0 10px 20px rgba(15,23,42,0.04);
+        }
+        .chart-caption {
+            color: #64748b;
+            font-size: 0.82rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        @media (max-width: 1100px) {
+            .chart-panel { min-height: 310px; }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
     render_page_header(
         "Analytics & Insights",
@@ -203,20 +245,33 @@ def render_analytics() -> None:
         health_filter=health_filter,
     )
 
+    st.markdown('<div class="analytics-shell">', unsafe_allow_html=True)
     render_summary_cards(context["summary"])
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     chart_col1, chart_col2 = st.columns(2, gap="medium")
     with chart_col1:
+        st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
         st.plotly_chart(build_milk_production_chart(context["chart_observations"]), use_container_width=True)
+        st.caption("Monthly trend in milk output helps identify performance swings and production opportunities.")
+        st.markdown('</div>', unsafe_allow_html=True)
     with chart_col2:
+        st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
         st.plotly_chart(build_health_trend_chart(context["chart_observations"]), use_container_width=True)
+        st.caption("Health signals provide a quick view of herd condition and change over time.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     chart_col3, chart_col4 = st.columns(2, gap="medium")
     with chart_col3:
+        st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
         st.plotly_chart(build_weather_vs_milk_chart(context["chart_observations"]), use_container_width=True)
+        st.caption("Temperature and humidity are compared with milk output to understand environmental influence.")
+        st.markdown('</div>', unsafe_allow_html=True)
     with chart_col4:
+        st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
         st.plotly_chart(build_prediction_history_chart(context["history"]), use_container_width=True)
+        st.caption("Prediction history supports confidence checks and short-interval monitoring decisions.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     ranking_col1, ranking_col2 = st.columns(2, gap="medium")
@@ -237,11 +292,16 @@ def render_analytics() -> None:
     insight_col, export_col = st.columns([2, 1], gap="medium")
     with insight_col:
         render_section_header("AI Insights", "Summarized actions and signals from the analytics engine.")
-        for insight in context["insights"]:
-            st.info(f"{insight['title']}: {insight['description']}", icon="💡")
+        if context["insights"]:
+            for insight in context["insights"]:
+                st.info(f"{insight['title']}: {insight['description']}", icon="💡")
+        else:
+            st.info("No insights are available for the current filter selection.", icon="ℹ️")
     with export_col:
         render_section_header("Export", "Download the filtered analytics output.")
         render_export_panel(pd.DataFrame(context["top_performing"] + context["poor_performing"]))
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state.get("dashboard_needs_refresh"):
         st.session_state["dashboard_needs_refresh"] = False
