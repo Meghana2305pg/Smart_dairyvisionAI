@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
+
+import streamlit as st
 
 from webapp.backend_services._bootstrap import ensure_project_on_path
 from webapp.config.settings import MODEL_PATH
@@ -12,9 +13,9 @@ from webapp.config.settings import MODEL_PATH
 ensure_project_on_path()
 
 
-@lru_cache(maxsize=1)
+@st.cache_resource(show_spinner=False)
 def load_model() -> Any:
-    """Load the trained model once and cache it for the application."""
+    """Load the trained model once and reuse it across the app session."""
     try:
         import joblib
     except ImportError as exc:

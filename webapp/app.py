@@ -67,56 +67,20 @@ def _reset_auth_state() -> None:
 
 
 def _read_query_params() -> dict[str, str]:
-    """Read the current query params into a plain dictionary."""
-    params: dict[str, str] = {}
-    for key, value in st.query_params.items():
-        if isinstance(value, list):
-            params[key] = str(value[0]) if value else ""
-        elif value is not None:
-            params[key] = str(value)
-    return params
+    """Read URL params only if they are intentionally shareable; this app stores runtime state in session state."""
+    return {}
 
 
 def _sync_query_params_from_session() -> None:
-    """Persist the current workspace identifiers into the browser URL."""
-    if not st.session_state.get("authenticated"):
+    """Do not persist sensitive or temporary app state into browser query parameters."""
+    try:
         st.query_params.clear()
-        return
-
-    params: dict[str, str] = {}
-    user = st.session_state.get("user") or {}
-    user_id = st.session_state.get("user_id") or user.get("id")
-    farm = st.session_state.get("farm") or {}
-    farm_id = st.session_state.get("farm_id") or farm.get("farm_id")
-
-    if user_id:
-        params["user_id"] = str(user_id)
-    user_email = user.get("email") or st.session_state.get("user_email")
-    if user_email:
-        params["user_email"] = str(user_email)
-    user_name = user.get("full_name") or st.session_state.get("user_name")
-    if user_name:
-        params["user_name"] = str(user_name)
-    pending_farm_setup = st.session_state.get("pending_farm_setup")
-    if pending_farm_setup is not None:
-        params["pending_farm_setup"] = "1" if pending_farm_setup else "0"
-    if farm_id:
-        params["farm_id"] = str(farm_id)
-    farm_name = farm.get("name") or st.session_state.get("farm_name")
-    if farm_name:
-        params["farm_name"] = str(farm_name)
-
-    active_section = st.session_state.get("active_section", "dashboard")
-    params["active_section"] = str(active_section or "dashboard")
-
-    st.query_params.clear()
-    for key, value in params.items():
-        st.query_params[key] = value
+    except Exception:
+        pass
 
 
 def _restore_workspace_state() -> None:
-    """Restore the authenticated workspace from the current session or URL params."""
-    params = _read_query_params()
+    """Restore the authenticated workspace from in-memory session state only."""
     auth_service: AuthService = st.session_state.auth_service
 
     current_user = st.session_state.get("user") or auth_service.current_user()
@@ -125,15 +89,6 @@ def _restore_workspace_state() -> None:
         st.session_state.user_id = current_user.get("id") or st.session_state.get("user_id")
         st.session_state.user_email = current_user.get("email") or st.session_state.get("user_email")
         st.session_state.user_name = current_user.get("full_name") or st.session_state.get("user_name")
-
-    if params.get("user_id") and not st.session_state.get("user_id"):
-        st.session_state.user_id = params["user_id"]
-    if params.get("user_email") and not st.session_state.get("user_email"):
-        st.session_state.user_email = params["user_email"]
-    if params.get("user_name") and not st.session_state.get("user_name"):
-        st.session_state.user_name = params["user_name"]
-    if params.get("pending_farm_setup") is not None:
-        st.session_state.pending_farm_setup = params["pending_farm_setup"] == "1"
 
     if st.session_state.get("user") is None and st.session_state.get("user_id"):
         st.session_state.user = {
@@ -152,9 +107,9 @@ def _restore_workspace_state() -> None:
         return
 
     farm = st.session_state.get("farm")
-    farm_id = st.session_state.get("farm_id") or params.get("farm_id")
-    farm_name = st.session_state.get("farm_name") or params.get("farm_name")
-    pending_farm_setup = bool(st.session_state.get("pending_farm_setup") or params.get("pending_farm_setup") == "1")
+    farm_id = st.session_state.get("farm_id")
+    farm_name = st.session_state.get("farm_name")
+    pending_farm_setup = bool(st.session_state.get("pending_farm_setup"))
 
     if farm is None and farm_id:
         farm_result = st.session_state.farm_service.get_farm(farm_id)
@@ -182,7 +137,7 @@ def _restore_workspace_state() -> None:
 
 
 def _prepare_workspace_state() -> None:
-    """Keep the app state and the browser URL in sync."""
+    """Refresh the session-bound app state without persisting runtime state to browser query params."""
     _restore_workspace_state()
     update_app_state()
     _sync_query_params_from_session()

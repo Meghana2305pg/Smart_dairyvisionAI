@@ -24,6 +24,10 @@
         "/^python tests/test_webapp_ui\\.py$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^cd /Users/sanjana/Smart_dairyvisionAI && python - <<'PY'\nimport streamlit\nprint\\(streamlit\\.__version__\\)\nprint\\(hasattr\\(__import__\\('streamlit'\\), 'segmented_control'\\)\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

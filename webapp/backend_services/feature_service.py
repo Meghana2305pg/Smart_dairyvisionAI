@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import pandas as pd
+import streamlit as st
 
 from webapp.backend_services._bootstrap import ensure_project_on_path
 from webapp.config.settings import DEFAULT_BASE_HUM, DEFAULT_BASE_TEMP
@@ -12,8 +13,9 @@ from webapp.config.settings import DEFAULT_BASE_HUM, DEFAULT_BASE_TEMP
 ensure_project_on_path()
 
 
+@st.cache_data(show_spinner=False)
 def prepare_feature_frame(base_temp: float = DEFAULT_BASE_TEMP, base_hum: float = DEFAULT_BASE_HUM) -> tuple[Any, Any, Any]:
-    """Reuse the existing data loading and feature engineering pipeline."""
+    """Reuse the existing data loading and feature engineering pipeline with caching."""
     try:
         from data_loader import load_and_prepare
         from feature_engineering import build_features
@@ -25,6 +27,7 @@ def prepare_feature_frame(base_temp: float = DEFAULT_BASE_TEMP, base_hum: float 
     return df_full, X, y
 
 
+@st.cache_data(show_spinner=False)
 def get_feature_defaults(base_temp: float = DEFAULT_BASE_TEMP, base_hum: float = DEFAULT_BASE_HUM) -> dict[str, Any]:
     """Return sensible default values for the interactive UI from the existing training data."""
     _, X, _ = prepare_feature_frame(base_temp=base_temp, base_hum=base_hum)
