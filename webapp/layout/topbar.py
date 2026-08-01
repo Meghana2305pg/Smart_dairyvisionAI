@@ -7,6 +7,13 @@ import streamlit as st
 def render_topbar() -> None:
     """Render the professional top navigation bar."""
     col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 2, 1.5, 1.2, 1, 0.8, 0.8])
+    weather_value = None
+    with st.spinner("Loading navigation context..."):
+        try:
+            from webapp.backend_services.weather_service import get_current_weather
+            weather_value = get_current_weather()
+        except Exception:
+            weather_value = None
 
     with col1:
         st.markdown(
@@ -46,9 +53,8 @@ def render_topbar() -> None:
         )
 
     with col3:
-        try:
-            from webapp.backend_services.weather_service import get_current_weather
-            temp, humidity = get_current_weather()
+        if weather_value is not None:
+            temp, humidity = weather_value
             st.markdown(
                 f"""
                 <div style='
@@ -64,7 +70,7 @@ def render_topbar() -> None:
                 """,
                 unsafe_allow_html=True,
             )
-        except Exception:
+        else:
             st.markdown(
                 """
                 <div style='

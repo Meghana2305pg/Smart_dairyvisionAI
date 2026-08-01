@@ -214,6 +214,11 @@ def render_cow_profile() -> None:
         st.session_state.active_section = "daily_operations"
         st.rerun()
 
+    if st.button("📈 Open Prediction Center", use_container_width=True):
+        st.session_state.selected_cow_id = selected_cow_id
+        st.session_state.active_section = "prediction_center"
+        st.rerun()
+
     if st.button("🗑️ Delete This Cow", use_container_width=True):
         st.session_state.confirm_delete_for = selected_cow_id
 

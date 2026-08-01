@@ -29,15 +29,17 @@ def _get_latest_twin_snapshot(cow_service: Any, cow_id: str | None) -> Any | Non
 
 def render_dashboard() -> None:
     """Render the main dashboard screen."""
-    col1, col2, col3, col4 = st.columns(4, gap="medium")
+    st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
+    with st.spinner("Loading latest dashboard context..."):
+        col1, col2, col3, col4 = st.columns(4, gap="medium")
 
-    # Get current data
-    dashboard_service: DashboardService = st.session_state.dashboard_service
-    dashboard = dashboard_service.build_dashboard()
-    base_temp, base_hum = get_current_weather()
-    submitted_cow_id = st.session_state.get("submitted_cow_id") or st.session_state.get("selected_cow_id")
-    cow_service = st.session_state.get("cow_service")
-    latest_snapshot = _get_latest_twin_snapshot(cow_service, submitted_cow_id)
+        # Get current data
+        dashboard_service: DashboardService = st.session_state.dashboard_service
+        dashboard = dashboard_service.build_dashboard()
+        base_temp, base_hum = get_current_weather()
+        submitted_cow_id = st.session_state.get("submitted_cow_id") or st.session_state.get("selected_cow_id")
+        cow_service = st.session_state.get("cow_service")
+        latest_snapshot = _get_latest_twin_snapshot(cow_service, submitted_cow_id)
 
     if latest_snapshot is not None:
         input_row = {

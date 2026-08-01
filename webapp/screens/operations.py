@@ -10,6 +10,8 @@ from webapp.backend_services.weather_service import get_current_weather
 from webapp.digital_twin.observation import Observation
 from webapp.services.cow_service import CowService
 from webapp.services.observation_service import ObservationService
+from webapp.utils.logging import log_error, log_event
+from webapp.utils.validation import validate_daily_operations_form
 
 
 def _build_input_row(age: float, weight: float, feed: float, temperature: float, humidity: float, health_status: int) -> dict[str, float | int]:
@@ -82,42 +84,59 @@ def render_daily_operations() -> None:
         submitted = st.form_submit_button("Record & Process Observation", use_container_width=True)
 
     if submitted:
-        try:
-            observation = Observation(
-                cow_id=selected_cow_id,
-                age=float(age),
-                weight=float(weight),
-                feed=float(feed),
-                temperature=float(temperature),
-                humidity=float(humidity),
-                health_status=int(health_status),
-                notes=notes,
-            )
-            result = observation_service.record_observation(
-                cow_id=selected_cow_id,
-                age=float(age),
-                weight=float(weight),
-                feed=float(feed),
-                temperature=float(temperature),
-                humidity=float(humidity),
-                health_status=int(health_status),
-                notes=notes,
-            )
-            input_row = _build_input_row(float(age), float(weight), float(feed), float(temperature), float(humidity), int(health_status))
-            prediction = predict_milk_yield(input_row, base_temp=float(temperature), base_hum=float(humidity))
-            health = get_health_alerts_for_input(input_row, base_temp=float(temperature), base_hum=float(humidity))
-            st.session_state.daily_ops_phase = "results"
-            st.session_state.daily_ops_last_result = {
-                "cow_id": selected_cow_id,
-                "prediction": prediction,
-                "health": health,
-                "snapshot": result.get("snapshot"),
-            }
-            st.session_state.daily_ops_last_submitted_cow = selected_cow_id
-            st.session_state.submitted_cow_id = selected_cow_id
-            st.session_state.observation_submitted = True
-            st.session_state.active_section = "dashboard"
-            st.session_state.dashboard_needs_refresh = True
-            st.rerun()
-        except Exception as exc:
-            st.error(f"Failed to process observation: {exc}")
+        validation_errors = validate_daily_operations_form({
+            "cow_id": selected_cow_id,
+            "age": age,
+            "weight": weight,
+            "feed": feed,
+            "temperature": temperature,
+            "humidity": humidity,
+            "notes": notes,
+        })
+        if validation_errors:
+            for error in validation_errors:
+                st.error(error)
+        else:
+            try:
+                observation = Observation(
+                    cow_id=selected_cow_id,
+                    age=float(age),
+                    weight=float(weight),
+                    feed=float(feed),
+                    temperature=float(temperature),
+                    humidity=float(humidity),
+                    health_status=int(health_status),
+                    notes=notes,
+                )
+                result = observation_service.record_observation(
+                    cow_id=selected_cow_id,
+                    age=float(age),
+                    weight=float(weight),
+                    feed=float(feed),
+                    temperature=float(temperature),
+                    humidity=float(humidity),
+                    health_status=int(health_status),
+                    notes=notes,
+                )
+                input_row = _build_input_row(float(age), float(weight), float(feed), float(temperature), float(humidity), int(health_status))
+                prediction = predict_milk_yield(input_row, base_temp=float(temperature), base_hum=float(humidity))
+                health = get_health_alerts_for_input(input_row, base_temp=float(temperature), base_hum=float(humidity))
+                st.session_state.daily_ops_phase = "results"
+                st.session_state.daily_ops_last_result = {
+                    "cow_id": selected_cow_id,
+                    "prediction": prediction,
+                    "health": health,
+                    "snapshot": result.get("snapshot"),
+                }
+                st.session_state.daily_ops_last_submitted_cow = selected_cow_id
+                st.session_state.submitted_cow_id = selected_cow_id
+                st.session_state.selected_cow_id = selected_cow_id
+                st.session_state.last_selected_cow = selected_cow_id
+                st.session_state.observation_submitted = True
+                st.session_state.active_section = "dashboard"
+                st.session_state.dashboard_needs_refresh = True
+                log_event("observation_recorded", cow_id=selected_cow_id)
+                st.rerun()
+            except Exception as exc:
+                log_error("observation_processing_failed", cow_id=selected_cow_id, error=str(exc))
+                st.error("The observation could not be processed. Please try again shortly.")

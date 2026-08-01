@@ -20,3 +20,13 @@ __pycache__/
 *.log
 
 .env
+
+# VS Code
+.vscode/
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/

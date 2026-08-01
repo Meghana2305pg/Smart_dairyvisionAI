@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import traceback
 from typing import Any
 
 from webapp.repositories.supabase_client import SupabaseClient
@@ -33,7 +34,11 @@ class AuthService:
         return user_payload
 
     def login(self, email: str, password: str) -> bool:
-        response = self.client.client.auth.sign_in_with_password({"email": email, "password": password})
+        normalized_email = email.strip().lower()
+        response = self.client.client.auth.sign_in_with_password({
+            "email": normalized_email,
+            "password": password,
+        })
         if response.user is None:
             return False
         self._current_user = {

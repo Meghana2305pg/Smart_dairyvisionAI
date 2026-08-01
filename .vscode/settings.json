@@ -1,5 +1,21 @@
 {
     "chat.tools.terminal.autoApprove": {
-        ".venv/bin/python3": true
+        ".venv/bin/python3": true,
+        "/^python3 -m unittest tests\\.test_prediction_workspace tests\\.test_digital_twin_workspace tests\\.test_twin_intelligence tests\\.test_twin_memory$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^python3 -m unittest tests\\.test_analytics_workspace tests\\.test_prediction_workspace tests\\.test_digital_twin_workspace tests\\.test_twin_intelligence tests\\.test_twin_memory$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /Users/sanjana/Smart_dairyvisionAI && python3 - <<'PY'\nimport sys\nfrom pathlib import Path\nsys\\.path\\.insert\\(0, str\\(Path\\('\\.'\\)\\.resolve\\(\\)\\)\\)\nfrom webapp\\.screens\\.explainability import build_explainability_context\n\npayload = build_explainability_context\\(\n    cow_record=\\{\"cow_id\": \"cow-001\", \"name\": \"Mabel\", \"breed\": \"Holstein\"\\},\n    observations=\\[\\{\"cow_id\": \"cow-001\", \"timestamp\": \"2026-01-01T00:00:00\", \"notes\": \"Routine check\"\\}\\],\n    prediction=\\{\"prediction\": 24\\.9\\},\n    explanation=\\[\\{\"feature\": \"feed\", \"contribution\": 0\\.35\\}, \\{\"feature\": \"temperature\", \"contribution\": -0\\.15\\}\\],\n    weather=\\(31\\.0, 68\\.0\\),\n    model_version=\"1\\.0\\.0\",\n    risk_level=\"Low\",\n\\)\nprint\\(payload\\['summary'\\]\\)\nprint\\(payload\\['feature_table'\\]\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^python -m unittest tests\\.test_command_centre_workspace$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }

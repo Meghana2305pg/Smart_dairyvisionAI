@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import sys
+import traceback
 from pathlib import Path
 
 current_path = Path(__file__).resolve()
@@ -28,6 +29,7 @@ from webapp.screens.explainability import render_explainability
 from webapp.screens.health import render_health
 from webapp.screens.herd import render_herd
 from webapp.screens.operations import render_daily_operations
+from webapp.screens.prediction import render_prediction
 from webapp.screens.settings import render_settings
 from webapp.services.auth_service import AuthService
 from webapp.services.cow_service import CowService
@@ -41,6 +43,22 @@ from webapp.state.session_state import (
     APP_STATE_NOT_AUTHENTICATED,
     bootstrap_session_state,
 )
+from webapp.utils.logging import log_error, log_event
+from webapp.utils.validation import validate_farm_setup_form, validate_login_form, validate_registration_form
+
+
+def _reset_auth_state() -> None:
+    """Reset the user-facing auth and farm state while preserving the service objects."""
+    st.session_state.user = None
+    st.session_state.authenticated = False
+    st.session_state.farm = None
+    st.session_state.farm_twin = None
+    st.session_state.cows = []
+    st.session_state.selected_cow_id = None
+    st.session_state.last_selected_cow = None
+    st.session_state.active_view = "login"
+    st.session_state.active_section = "dashboard"
+    st.session_state.app_state = APP_STATE_NOT_AUTHENTICATED
 
 
 def initialize_app_state() -> None:
@@ -142,23 +160,35 @@ def render_login_screen() -> None:
 
         if submitted:
             service: AuthService = st.session_state.auth_service
-            try:
-                if service.login(email=email, password=password):
-                    st.session_state.user = service.current_user()
-                    st.session_state.authenticated = True
-                    st.session_state.active_view = "login"
-                    st.session_state.farm = None
-                    st.session_state.farm_twin = None
-                    st.session_state.cows = []
-                    st.session_state.show_herd_form = False
-                    st.session_state.active_section = "dashboard"
-                    st.session_state.app_state = APP_STATE_AUTHENTICATED_NO_FARM
-                    st.success("Signed in successfully")
-                    st.rerun()
-                else:
-                    st.error("Invalid email or password")
-            except Exception as exc:
-                st.error(f"Authentication failed: {exc}")
+            errors = validate_login_form(email, password)
+            if errors:
+                for error in errors:
+                    st.error(error)
+            else:
+                try:
+                    if service.login(email=email, password=password):
+                        current_user = service.current_user()
+                        st.session_state.user = current_user
+                        st.session_state.authenticated = True
+                        st.session_state.active_view = "login"
+                        st.session_state.farm = None
+                        st.session_state.farm_twin = None
+                        st.session_state.cows = []
+                        st.session_state.selected_cow_id = None
+                        st.session_state.show_herd_form = False
+                        st.session_state.active_section = "dashboard"
+                        st.session_state.app_state = APP_STATE_AUTHENTICATED_NO_FARM
+                        log_event("login_success", email=current_user.get("email") if current_user else email)
+                        st.success("Signed in successfully")
+                        st.rerun()
+                    else:
+                        log_event("login_failed", email=email)
+                        st.error("Invalid email or password")
+                except Exception as exc:
+                    traceback.print_exc()
+                    st.exception(exc)
+                    log_error("authentication_failed", email=email, error=str(exc))
+                    st.error(f"Authentication failed: {exc}")
 
         st.markdown("<div style='margin-top: 32px;'></div>", unsafe_allow_html=True)
         if st.button("Create Account", use_container_width=True):
@@ -196,10 +226,10 @@ def render_register_screen() -> None:
             submitted = st.form_submit_button("Create Account", use_container_width=True)
 
         if submitted:
-            if not full_name or not email or not password:
-                st.error("Please complete required fields.")
-            elif password != confirm_password:
-                st.error("Passwords do not match.")
+            errors = validate_registration_form(email, password, confirm_password, full_name)
+            if errors:
+                for error in errors:
+                    st.error(error)
             else:
                 service: AuthService = st.session_state.auth_service
                 try:
@@ -209,14 +239,21 @@ def render_register_screen() -> None:
                     st.session_state.farm = None
                     st.session_state.farm_twin = None
                     st.session_state.cows = []
+                    st.session_state.selected_cow_id = None
                     st.session_state.active_view = "login"
                     st.session_state.active_section = "dashboard"
                     st.session_state.app_state = APP_STATE_AUTHENTICATED_NO_FARM
+                    log_event("registration_success", email=email)
                     st.success("Account created successfully")
                     st.rerun()
                 except Exception as exc:
-                    st.error(f"Registration failed: {exc}")
+                    # log_error("registration_failed", email=email, error=str(exc))
+                    # st.error("Registration could not be completed. Please try again or contact support.")
+                    import traceback
 
+                    traceback.print_exc()          # prints full traceback in terminal
+                    st.exception(exc)               # shows the actual exception in Streamlit
+                    st.error(f"Registration failed: {exc}")
         if st.button("Back to Login", use_container_width=True):
             st.session_state.active_view = "login"
             st.rerun()
@@ -250,18 +287,26 @@ def render_farm_setup_screen() -> None:
             submitted = st.form_submit_button("Create Farm", use_container_width=True)
 
         if submitted:
-            if not farm_name:
-                st.error("Farm name is required.")
+            errors = validate_farm_setup_form(farm_name, location, farm_size)
+            if errors:
+                for error in errors:
+                    st.error(error)
             else:
                 service: FarmService = st.session_state.farm_service
-                farm_id = f"farm-{farm_name.lower().replace(' ', '-')}"
-                result = service.create_farm(farm_id=farm_id, name=farm_name, location=location, farm_size=farm_size)
-                st.session_state.farm = result["farm"]
-                st.session_state.farm_twin = result["farm_twin"]
-                st.session_state.cows = []
-                st.session_state.active_section = "dashboard"
-                st.success("Farm created successfully")
-                st.rerun()
+                farm_id = f"farm-{farm_name.lower().replace(' ', '-') }"
+                try:
+                    result = service.create_farm(farm_id=farm_id, name=farm_name, location=location, farm_size=farm_size)
+                    st.session_state.farm = result["farm"]
+                    st.session_state.farm_twin = result["farm_twin"]
+                    st.session_state.cows = []
+                    st.session_state.selected_cow_id = None
+                    st.session_state.active_section = "dashboard"
+                    log_event("farm_created", farm_id=farm_id)
+                    st.success("Farm created successfully")
+                    st.rerun()
+                except Exception as exc:
+                    log_error("farm_creation_failed", farm_id=farm_id, error=str(exc))
+                    st.error("Farm setup could not be completed. Please try again shortly.")
 
 
 def render_screen(section: str) -> None:
@@ -271,6 +316,7 @@ def render_screen(section: str) -> None:
         "my_herd": render_herd,
         "daily_operations": render_daily_operations,
         "cow_profile": render_cow_profile,
+        "prediction_center": render_prediction,
         "digital_twin": render_digital_twin,
         "health_alerts": render_health,
         "analytics": render_analytics,

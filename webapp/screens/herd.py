@@ -9,6 +9,8 @@ from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
 from webapp.digital_twin.cow_twin import CowTwin
 from webapp.services.cow_service import CowService
+from webapp.utils.logging import log_error, log_event
+from webapp.utils.validation import validate_cow_registration_form
 
 
 def _normalize_cow(cow_data: Any) -> dict[str, Any]:
@@ -122,8 +124,10 @@ def render_herd() -> None:
                     st.session_state.show_herd_form = False
 
             if submitted_register:
-                if not new_cow_id or not new_name:
-                    st.error("Cow ID and Name are required.")
+                errors = validate_cow_registration_form(new_cow_id, new_name)
+                if errors:
+                    for error in errors:
+                        st.error(error)
                 else:
                     existing_ids = {cow.get("cow_id", "").lower() for cow in cows}
                     if new_cow_id.lower() in existing_ids:
@@ -138,11 +142,16 @@ def render_herd() -> None:
                                 status=new_status,
                             )
                             st.session_state.show_herd_form = False
+                            st.session_state.selected_cow_id = new_cow_id
+                            st.session_state.last_selected_cow = new_cow_id
                             st.session_state.dashboard_needs_refresh = True
+                            st.session_state.active_section = "cow_profile"
+                            log_event("cow_registered", cow_id=new_cow_id, name=new_name)
                             st.success(f"Cow {new_name} registered successfully!")
                             st.rerun()
                         except Exception as exc:
-                            st.error(f"Failed to register cow: {exc}")
+                            log_error("cow_registration_failed", cow_id=new_cow_id, error=str(exc))
+                            st.error("Cow registration could not be completed. Please try again shortly.")
 
     if not cows:
         st.info("No cows registered yet. Add the first cow to get started.", icon="ℹ️")
@@ -241,8 +250,10 @@ def render_herd() -> None:
                     st.session_state.selected_cow_id = cow_id
                     _set_profile_view(cow_id, tab="Recommendations")
             with b4:
-                if st.button("🗑 Delete", key=f"delete_{cow_id}", use_container_width=True):
-                    st.session_state.confirm_delete_for = cow_id
+                if st.button("🧪 Prediction Center", key=f"pred_center_{cow_id}", use_container_width=True):
+                    st.session_state.selected_cow_id = cow_id
+                    st.session_state.active_section = "prediction_center"
+                    st.rerun()
 
         if st.session_state.get("confirm_delete_for") == cow_id:
             st.warning("Please confirm deletion of the selected cow.")
