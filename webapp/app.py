@@ -45,10 +45,15 @@ from webapp.state.session_state import (
 )
 from webapp.utils.logging import log_error, log_event
 from webapp.utils.validation import validate_farm_setup_form, validate_login_form, validate_registration_form
+from webapp.ui.section_header import apply_app_theme
 
 
 def _reset_auth_state() -> None:
     """Reset the user-facing auth and farm state while preserving the service objects."""
+    try:
+        st.session_state.auth_service.logout()
+    except Exception:
+        pass
     st.session_state.user = None
     st.session_state.authenticated = False
     st.session_state.farm = None
@@ -59,6 +64,128 @@ def _reset_auth_state() -> None:
     st.session_state.active_view = "login"
     st.session_state.active_section = "dashboard"
     st.session_state.app_state = APP_STATE_NOT_AUTHENTICATED
+
+
+def _read_query_params() -> dict[str, str]:
+    """Read the current query params into a plain dictionary."""
+    params: dict[str, str] = {}
+    for key, value in st.query_params.items():
+        if isinstance(value, list):
+            params[key] = str(value[0]) if value else ""
+        elif value is not None:
+            params[key] = str(value)
+    return params
+
+
+def _sync_query_params_from_session() -> None:
+    """Persist the current workspace identifiers into the browser URL."""
+    if not st.session_state.get("authenticated"):
+        st.query_params.clear()
+        return
+
+    params: dict[str, str] = {}
+    user = st.session_state.get("user") or {}
+    user_id = st.session_state.get("user_id") or user.get("id")
+    farm = st.session_state.get("farm") or {}
+    farm_id = st.session_state.get("farm_id") or farm.get("farm_id")
+
+    if user_id:
+        params["user_id"] = str(user_id)
+    user_email = user.get("email") or st.session_state.get("user_email")
+    if user_email:
+        params["user_email"] = str(user_email)
+    user_name = user.get("full_name") or st.session_state.get("user_name")
+    if user_name:
+        params["user_name"] = str(user_name)
+    pending_farm_setup = st.session_state.get("pending_farm_setup")
+    if pending_farm_setup is not None:
+        params["pending_farm_setup"] = "1" if pending_farm_setup else "0"
+    if farm_id:
+        params["farm_id"] = str(farm_id)
+    farm_name = farm.get("name") or st.session_state.get("farm_name")
+    if farm_name:
+        params["farm_name"] = str(farm_name)
+
+    active_section = st.session_state.get("active_section", "dashboard")
+    params["active_section"] = str(active_section or "dashboard")
+
+    st.query_params.clear()
+    for key, value in params.items():
+        st.query_params[key] = value
+
+
+def _restore_workspace_state() -> None:
+    """Restore the authenticated workspace from the current session or URL params."""
+    params = _read_query_params()
+    auth_service: AuthService = st.session_state.auth_service
+
+    current_user = st.session_state.get("user") or auth_service.current_user()
+    if current_user:
+        st.session_state.user = current_user
+        st.session_state.user_id = current_user.get("id") or st.session_state.get("user_id")
+        st.session_state.user_email = current_user.get("email") or st.session_state.get("user_email")
+        st.session_state.user_name = current_user.get("full_name") or st.session_state.get("user_name")
+
+    if params.get("user_id") and not st.session_state.get("user_id"):
+        st.session_state.user_id = params["user_id"]
+    if params.get("user_email") and not st.session_state.get("user_email"):
+        st.session_state.user_email = params["user_email"]
+    if params.get("user_name") and not st.session_state.get("user_name"):
+        st.session_state.user_name = params["user_name"]
+    if params.get("pending_farm_setup") is not None:
+        st.session_state.pending_farm_setup = params["pending_farm_setup"] == "1"
+
+    if st.session_state.get("user") is None and st.session_state.get("user_id"):
+        st.session_state.user = {
+            "id": st.session_state.get("user_id"),
+            "email": st.session_state.get("user_email", ""),
+            "full_name": st.session_state.get("user_name", ""),
+        }
+
+    if st.session_state.get("authenticated") and st.session_state.get("user") is None and st.session_state.get("user_id"):
+        st.session_state.authenticated = True
+
+    if not st.session_state.get("authenticated") and st.session_state.get("user_id"):
+        st.session_state.authenticated = True
+
+    if not st.session_state.get("authenticated"):
+        return
+
+    farm = st.session_state.get("farm")
+    farm_id = st.session_state.get("farm_id") or params.get("farm_id")
+    farm_name = st.session_state.get("farm_name") or params.get("farm_name")
+    pending_farm_setup = bool(st.session_state.get("pending_farm_setup") or params.get("pending_farm_setup") == "1")
+
+    if farm is None and farm_id:
+        farm_result = st.session_state.farm_service.get_farm(farm_id)
+        if farm_result and farm_result.get("farm"):
+            farm = farm_result["farm"]
+
+    if farm is None and not pending_farm_setup:
+        farms = st.session_state.dashboard_service.repository.get_farms()
+        if farms:
+            farm = farms[0]
+
+    if farm is not None:
+        st.session_state.farm = farm
+        st.session_state.farm_id = farm.get("farm_id") or farm_id
+        st.session_state.farm_name = farm.get("name") or farm_name
+        if not st.session_state.get("cows"):
+            st.session_state.cows = st.session_state.cow_service.get_cows()
+        st.session_state.pending_farm_setup = False
+
+    if pending_farm_setup and farm is None:
+        st.session_state.pending_farm_setup = True
+
+    if st.session_state.get("authenticated") and st.session_state.get("active_section") in {"login", "register", "farm_setup"}:
+        st.session_state.active_section = "dashboard"
+
+
+def _prepare_workspace_state() -> None:
+    """Keep the app state and the browser URL in sync."""
+    _restore_workspace_state()
+    update_app_state()
+    _sync_query_params_from_session()
 
 
 def initialize_app_state() -> None:
@@ -74,8 +201,14 @@ def initialize_app_state() -> None:
             "active_section": "dashboard",
             "authenticated": False,
             "user": None,
+            "user_id": None,
+            "user_email": None,
+            "user_name": None,
             "farm": None,
+            "farm_id": None,
+            "farm_name": None,
             "farm_twin": None,
+            "pending_farm_setup": False,
             "cows": [],
             "selected_cow_id": None,
             "show_herd_form": False,
@@ -169,14 +302,20 @@ def render_login_screen() -> None:
                     if service.login(email=email, password=password):
                         current_user = service.current_user()
                         st.session_state.user = current_user
+                        st.session_state.user_id = current_user.get("id") if current_user else None
+                        st.session_state.user_email = current_user.get("email") if current_user else email
+                        st.session_state.user_name = current_user.get("full_name") if current_user else None
                         st.session_state.authenticated = True
                         st.session_state.active_view = "login"
                         st.session_state.farm = None
+                        st.session_state.farm_id = None
+                        st.session_state.farm_name = None
                         st.session_state.farm_twin = None
                         st.session_state.cows = []
                         st.session_state.selected_cow_id = None
                         st.session_state.show_herd_form = False
                         st.session_state.active_section = "dashboard"
+                        st.session_state.pending_farm_setup = False
                         st.session_state.app_state = APP_STATE_AUTHENTICATED_NO_FARM
                         log_event("login_success", email=current_user.get("email") if current_user else email)
                         st.success("Signed in successfully")
@@ -235,13 +374,19 @@ def render_register_screen() -> None:
                 try:
                     user = service.register_user(email=email, password=password, full_name=full_name, phone=phone)
                     st.session_state.user = user
+                    st.session_state.user_id = user.get("id")
+                    st.session_state.user_email = user.get("email")
+                    st.session_state.user_name = user.get("full_name")
                     st.session_state.authenticated = True
                     st.session_state.farm = None
+                    st.session_state.farm_id = None
+                    st.session_state.farm_name = None
                     st.session_state.farm_twin = None
                     st.session_state.cows = []
                     st.session_state.selected_cow_id = None
                     st.session_state.active_view = "login"
                     st.session_state.active_section = "dashboard"
+                    st.session_state.pending_farm_setup = True
                     st.session_state.app_state = APP_STATE_AUTHENTICATED_NO_FARM
                     log_event("registration_success", email=email)
                     st.success("Account created successfully")
@@ -297,10 +442,13 @@ def render_farm_setup_screen() -> None:
                 try:
                     result = service.create_farm(farm_id=farm_id, name=farm_name, location=location, farm_size=farm_size)
                     st.session_state.farm = result["farm"]
+                    st.session_state.farm_id = result["farm"].get("farm_id", farm_id)
+                    st.session_state.farm_name = result["farm"].get("name", farm_name)
                     st.session_state.farm_twin = result["farm_twin"]
                     st.session_state.cows = []
                     st.session_state.selected_cow_id = None
                     st.session_state.active_section = "dashboard"
+                    st.session_state.pending_farm_setup = False
                     log_event("farm_created", farm_id=farm_id)
                     st.success("Farm created successfully")
                     st.rerun()
@@ -331,13 +479,28 @@ def render_screen(section: str) -> None:
 
 def main() -> None:
     """Main application entry point."""
+    st.set_page_config(page_title="DairyVision AI", page_icon="🐄", layout="wide", initial_sidebar_state="expanded")
+    apply_app_theme()
     initialize_app_state()
-    update_app_state()
+    _prepare_workspace_state()
 
     app_state = st.session_state.get("app_state")
 
     # Pre-authentication screens
     if app_state == APP_STATE_NOT_AUTHENTICATED:
+        st.markdown(
+            """
+            <style>
+            section[data-testid="stSidebar"] {
+                display: none !important;
+            }
+            .main .block-container {
+                padding-left: clamp(1rem, 1.8vw, 1.6rem) !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         if st.session_state.get("active_view") == "register":
             render_register_screen()
         else:
@@ -346,6 +509,19 @@ def main() -> None:
 
     # Farm setup screen
     if app_state == APP_STATE_AUTHENTICATED_NO_FARM:
+        st.markdown(
+            """
+            <style>
+            section[data-testid="stSidebar"] {
+                display: none !important;
+            }
+            .main .block-container {
+                padding-left: clamp(1rem, 1.8vw, 1.6rem) !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         render_farm_setup_screen()
         return
 

@@ -12,6 +12,7 @@ from webapp.components.cards import info_card, recommendation_card
 from webapp.digital_twin.cow_twin import CowTwin
 from webapp.digital_twin.observation import Observation
 from webapp.services.cow_service import CowService
+from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def _normalize_observation(observation: Any) -> dict[str, Any]:
@@ -191,11 +192,11 @@ def render_digital_twin() -> None:
     if not twin.latest_observation and not observations:
         st.info("No observations are available yet for this cow. Record one from Daily Operations to populate the twin workspace.", icon="ℹ️")
 
-    st.markdown(
-        f"<div style='font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 8px;'>{dashboard['cow_name']} · Digital Twin</div>",
-        unsafe_allow_html=True,
+    render_page_header(
+        f"{dashboard['cow_name']} · Digital Twin",
+        "Live twin state, recent observations, memory snapshots, and explainability insights for the selected cow.",
+        badge="Twin",
     )
-    st.caption("Live twin state, recent observations, memory snapshots, and explainability insights for the selected cow.")
 
     refresh_col1, refresh_col2 = st.columns([1, 3], gap="small")
     with refresh_col1:
@@ -217,7 +218,7 @@ def render_digital_twin() -> None:
         info_card("THI", f"{dashboard['thi']:.1f}")
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    st.markdown("<div style='font-size: 18px; font-weight: 700; margin-bottom: 16px;'>Live twin workspace</div>", unsafe_allow_html=True)
+    render_section_header("Live twin workspace", "At-a-glance status and supporting detail for the active cow.")
 
     left_col, right_col = st.columns([1.1, 0.9], gap="medium")
     with left_col:
@@ -240,7 +241,7 @@ def render_digital_twin() -> None:
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     timeline_col, memory_col = st.columns([1.2, 0.8], gap="medium")
     with timeline_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Observation timeline</div>", unsafe_allow_html=True)
+        render_section_header("Observation timeline", "Chronological observation history for the selected cow.")
         if dashboard["timeline"]:
             for item in reversed(dashboard["timeline"]):
                 st.markdown(
@@ -257,7 +258,7 @@ def render_digital_twin() -> None:
             st.info("No observations have been recorded for this cow yet.", icon="ℹ️")
 
     with memory_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Twin Memory</div>", unsafe_allow_html=True)
+        render_section_header("Twin Memory", "Stored snapshots and memory state for the twin.")
         info_card("Snapshots", str(dashboard['memory_info']['snapshot_count']))
         info_card("Latest snapshot", dashboard['memory_info']['latest_snapshot_id'] or "None")
         info_card("Last updated", dashboard['last_updated'].strftime('%Y-%m-%d %H:%M') if dashboard['last_updated'] else "Awaiting updates")

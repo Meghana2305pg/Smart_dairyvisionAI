@@ -16,6 +16,7 @@ from webapp.screens.comparison_panel import build_comparison_payload
 from webapp.screens.explanation_card import build_explanations
 from webapp.screens.feature_importance import build_feature_table
 from webapp.screens.shap_chart import build_contribution_timeline, build_shap_bar_chart
+from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def _normalise_observation(observation: Any) -> dict[str, Any]:
@@ -89,8 +90,11 @@ def render_explainability() -> None:
     observation_service = st.session_state.get("observation_service")
     selected_cow_id = st.session_state.get("selected_cow_id")
 
-    st.markdown("<div style='font-size: 24px; font-weight: 700; margin-bottom: 8px;'>Explainable AI Workspace</div>", unsafe_allow_html=True)
-    st.markdown("<div style='color: #475569; margin-bottom: 20px;'>Inspect the model's feature contributions and how they shape the current prediction.</div>", unsafe_allow_html=True)
+    render_page_header(
+        "Explainable AI Workspace",
+        "Inspect the model's feature contributions and how they shape the current prediction.",
+        badge="Explainability",
+    )
 
     if not selected_cow_id:
         st.info("Select a cow from My Herd or the Prediction Center to inspect explainability details.", icon="ℹ️")
@@ -161,26 +165,26 @@ def render_explainability() -> None:
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     left_col, right_col = st.columns(2, gap="medium")
     with left_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>SHAP Feature Contributions</div>", unsafe_allow_html=True)
+        render_section_header("SHAP Feature Contributions", "Feature contributions rendered from the existing explainability output.")
         st.plotly_chart(build_shap_bar_chart(explanation), use_container_width=True)
     with right_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Feature Contribution Table</div>", unsafe_allow_html=True)
+        render_section_header("Feature Contribution Table", "A tabular view of the current feature effects.")
         st.dataframe(pd.DataFrame(context["feature_table"]), use_container_width=True)
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     explanation_col, comparison_col = st.columns(2, gap="medium")
     with explanation_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Human-Readable Explanations</div>", unsafe_allow_html=True)
+        render_section_header("Human-Readable Explanations", "Plain-language summaries of the current model output.")
         for item in context["explanations"]:
             st.info(f"{item['title']}: {item['description']}", icon="💡")
     with comparison_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Prediction Comparison</div>", unsafe_allow_html=True)
+        render_section_header("Prediction Comparison", "A quick comparison between the current and reference outputs.")
         st.metric("Current Prediction", f"{context['comparison']['current_prediction']:.1f} L/day")
         st.metric("Compared To", f"{context['comparison']['comparison_prediction']:.1f} L/day")
         st.metric("Delta", f"{context['comparison']['delta']:.1f} L/day")
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Historical Explainability Timeline</div>", unsafe_allow_html=True)
+    render_section_header("Historical Explainability Timeline", "Track explainability changes over time.")
     st.plotly_chart(build_contribution_timeline(context["feature_table"]), use_container_width=True)
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)

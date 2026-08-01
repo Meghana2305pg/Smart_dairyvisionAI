@@ -17,6 +17,7 @@ from webapp.screens.charts import (
 from webapp.screens.export_panel import render_export_panel
 from webapp.screens.filter_panel import render_filter_panel
 from webapp.services.dashboard_service import DashboardService
+from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def _normalise_cow_records(cow_records: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
@@ -173,8 +174,11 @@ def render_analytics() -> None:
     cow_records = dashboard_service.repository.get_cows()
     observations = dashboard_service.repository.get_observations()
 
-    st.markdown("<div style='font-size: 24px; font-weight: 700; margin-bottom: 8px;'>Analytics & Insights</div>", unsafe_allow_html=True)
-    st.markdown("<div style='color: #475569; margin-bottom: 20px;'>Monitor herd performance, health, weather, and AI-generated recommendations in one workspace.</div>", unsafe_allow_html=True)
+    render_page_header(
+        "Analytics & Insights",
+        "Monitor herd performance, health, weather, and AI-generated recommendations in one workspace.",
+        badge="Workspace",
+    )
 
     try:
         weather = get_current_weather()
@@ -217,13 +221,13 @@ def render_analytics() -> None:
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     ranking_col1, ranking_col2 = st.columns(2, gap="medium")
     with ranking_col1:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 12px;'>Top Performing Cows</div>", unsafe_allow_html=True)
+        render_section_header("Top Performing Cows", "Highest-yield cows in the current filter set.")
         if context["top_performing"]:
             st.dataframe(pd.DataFrame(context["top_performing"]), use_container_width=True)
         else:
             st.info("No performance data available yet.", icon="ℹ️")
     with ranking_col2:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 12px;'>Poor Performing Cows</div>", unsafe_allow_html=True)
+        render_section_header("Poor Performing Cows", "Cows that may need closer review or intervention.")
         if context["poor_performing"]:
             st.dataframe(pd.DataFrame(context["poor_performing"]), use_container_width=True)
         else:
@@ -232,11 +236,11 @@ def render_analytics() -> None:
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     insight_col, export_col = st.columns([2, 1], gap="medium")
     with insight_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 12px;'>AI Insights</div>", unsafe_allow_html=True)
+        render_section_header("AI Insights", "Summarized actions and signals from the analytics engine.")
         for insight in context["insights"]:
             st.info(f"{insight['title']}: {insight['description']}", icon="💡")
     with export_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 12px;'>Export</div>", unsafe_allow_html=True)
+        render_section_header("Export", "Download the filtered analytics output.")
         render_export_panel(pd.DataFrame(context["top_performing"] + context["poor_performing"]))
 
     if st.session_state.get("dashboard_needs_refresh"):

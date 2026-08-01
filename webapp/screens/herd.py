@@ -11,6 +11,7 @@ from webapp.digital_twin.cow_twin import CowTwin
 from webapp.services.cow_service import CowService
 from webapp.utils.logging import log_error, log_event
 from webapp.utils.validation import validate_cow_registration_form
+from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def _normalize_cow(cow_data: Any) -> dict[str, Any]:
@@ -40,11 +41,7 @@ def _set_profile_view(cow_id: str, tab: str | None = None) -> None:
 
 def render_herd() -> None:
     """Render the herd management screen with search, registration, and actions."""
-    st.markdown(
-        "<div style='font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 8px;'>My Herd</div>",
-        unsafe_allow_html=True,
-    )
-    st.caption("Register new cows, inspect each animal workspace, and jump into the associated profile in a single click.")
+    render_page_header("My Herd", "Register new cows, inspect each animal workspace, and jump into the associated profile in a single click.", badge="Herd")
 
     cow_service: CowService = st.session_state.cow_service
     raw_cows = cow_service.get_cows()
@@ -110,6 +107,7 @@ def render_herd() -> None:
     # Registration UI using expander (no plain form)
     if st.session_state.get("show_herd_form"):
         with st.expander("Register New Cow", expanded=True):
+            render_section_header("Register New Cow", "Add a new animal to the herd and attach basic metadata.")
             cols = st.columns(3, gap="medium")
             with cols[0]:
                 new_cow_id = st.text_input("Cow ID", placeholder="e.g., cow-001")

@@ -1,222 +1,559 @@
 from __future__ import annotations
 
-import streamlit as st
+from html import escape
+
 from plotly import graph_objects as go
+import streamlit as st
 
 
 def apply_app_theme() -> None:
-    """Apply a minimal enterprise-style theme to the Streamlit experience."""
+    """Apply the shared enterprise dashboard theme."""
     st.markdown(
         """
         <style>
-        /* CRITICAL: Completely hide Streamlit's native sidebar and multipage navigation */
+        :root {
+            --dv-bg: #f5f7fb;
+            --dv-surface: #ffffff;
+            --dv-surface-2: #f8fafc;
+            --dv-border: rgba(15, 23, 42, 0.08);
+            --dv-border-strong: rgba(15, 23, 42, 0.14);
+            --dv-text: #0f172a;
+            --dv-muted: #64748b;
+            --dv-muted-2: #94a3b8;
+            --dv-accent: #2563eb;
+            --dv-accent-strong: #1d4ed8;
+            --dv-success: #15803d;
+            --dv-warning: #b45309;
+            --dv-danger: #b91c1c;
+            --dv-radius-xl: 24px;
+            --dv-radius-lg: 18px;
+            --dv-radius-md: 14px;
+            --dv-radius-sm: 10px;
+            --dv-shadow-lg: 0 18px 50px rgba(15, 23, 42, 0.08);
+            --dv-shadow-md: 0 12px 28px rgba(15, 23, 42, 0.06);
+            --dv-shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.04);
+        }
+
+        html, body, [data-testid="stAppViewContainer"] {
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 28%),
+                radial-gradient(circle at top right, rgba(21, 128, 61, 0.08), transparent 22%),
+                linear-gradient(180deg, #f8fafc 0%, #f5f7fb 48%, #eef2f7 100%);
+            color: var(--dv-text);
+            font-family: "Avenir Next", "Segoe UI Variable", "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+
+        .stApp {
+            background: transparent;
+        }
+
+        [data-testid="stHeader"],
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"] {
+            display: none !important;
+        }
+
         [data-testid="stSidebarNav"] {
             display: none !important;
         }
-        [data-testid="stSidebarContent"] {
+
+        [data-testid="stSidebar"] {
+            background: transparent !important;
+            min-width: 0 !important;
+        }
+
+        [data-testid="stSidebar"] > div:first-child {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        section[data-testid="stSidebar"]:empty,
+        section[data-testid="stSidebar"] > div:empty {
             display: none !important;
+            width: 0 !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
-        .st-emotion-cache-uf99v0 {
-            display: none !important;
+
+        section[data-testid="stSidebar"] > div {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border-right: 1px solid rgba(16, 185, 129, 0.12);
         }
-        /* Hide the pages sidebar area entirely */
-        .stApp > div:nth-child(1) > div:nth-child(1) {
-            display: none !important;
-        }
-        /* Adjust main content to use full width without sidebar */
-        .stApp {
-            background: #f4f7fb;
-        }
+
         .block-container {
+            width: 100% !important;
+            max-width: 100% !important;
             padding-top: 1rem;
             padding-bottom: 2rem;
-            max-width: 100% !important;
-            width: 100% !important;
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
+            padding-left: clamp(1rem, 1.8vw, 1.6rem) !important;
+            padding-right: clamp(1rem, 1.8vw, 1.6rem) !important;
         }
+
+        .main .block-container {
+            min-height: calc(100vh - 2rem);
+        }
+
+        h1, h2, h3, h4, h5, h6,
+        [data-testid="stMarkdownContainer"] h1,
+        [data-testid="stMarkdownContainer"] h2,
+        [data-testid="stMarkdownContainer"] h3 {
+            color: var(--dv-text);
+            letter-spacing: -0.02em;
+            font-family: "Avenir Next", "Segoe UI Variable", "SF Pro Display", "Helvetica Neue", sans-serif;
+        }
+
+        p, li, label, span, div {
+            color: var(--dv-text);
+        }
+
+        .hero-card,
+        .section-card,
+        .metric-card,
+        .dashboard-card,
+        .recommendation-card,
+        .alert-card,
+        .timeline-item,
+        .app-topbar {
+            background: var(--dv-surface);
+            border: 1px solid var(--dv-border);
+            box-shadow: var(--dv-shadow-sm);
+        }
+
         .hero-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%);
-            border: 1px solid #dfe8f3;
-            border-radius: 16px;
-            padding: 1rem 1.1rem;
+            border-radius: var(--dv-radius-xl);
+            padding: 1.25rem 1.4rem;
             margin-bottom: 1rem;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+            box-shadow: var(--dv-shadow-md);
+            background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.94) 100%);
         }
+
         .section-card {
-            background: #fbfcfe;
-            border: 1px solid #e6edf5;
-            border-radius: 12px;
-            padding: 0.9rem 1rem;
-            margin-bottom: 0.8rem;
+            border-radius: var(--dv-radius-lg);
+            padding: 1rem 1.05rem;
+            margin-bottom: 0.9rem;
         }
+
         .metric-card {
-            background: #ffffff;
-            border: 1px solid #e7ece6;
-            border-radius: 10px;
-            padding: 0.85rem 0.95rem;
-            min-height: 118px;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            border-radius: var(--dv-radius-lg);
+            padding: 1rem 1.05rem;
+            min-height: 132px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            box-shadow: var(--dv-shadow-sm);
         }
-        .dashboard-card {
-            background: #ffffff;
-            border: 1px solid #e5ebf2;
-            border-radius: 12px;
-            padding: 0.9rem 0.95rem;
-            margin-bottom: 0.7rem;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
+
+        .dashboard-card,
+        .recommendation-card,
+        .alert-card {
+            border-radius: var(--dv-radius-md);
+            padding: 0.95rem 1rem;
+            margin-bottom: 0.75rem;
         }
-        .card-title {
+
+        .dashboard-card:hover,
+        .recommendation-card:hover,
+        .alert-card:hover,
+        .metric-card:hover,
+        .section-card:hover {
+            border-color: var(--dv-border-strong);
+            box-shadow: var(--dv-shadow-md);
+        }
+
+        .card-title,
+        .metric-title,
+        .section-heading,
+        .app-section-label {
             font-size: 0.78rem;
-            font-weight: 700;
-            color: #64748b;
+            font-weight: 750;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.08em;
+            color: var(--dv-muted);
             margin-bottom: 0.3rem;
         }
-        .card-value {
-            font-size: 1.16rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.2rem;
+
+        .card-value,
+        .metric-value {
+            font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+            line-height: 1.1;
+            font-weight: 750;
+            color: var(--dv-text);
         }
-        .card-caption {
-            font-size: 0.92rem;
-            color: #475569;
+
+        .card-caption,
+        .metric-subtitle,
+        .timeline-detail,
+        .timeline-stamp,
+        .hero-subtitle,
+        .hero-caption {
+            color: var(--dv-muted);
+            font-size: 0.94rem;
+            line-height: 1.45;
         }
+
         .section-heading {
-            font-size: 0.96rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin: 0.8rem 0 0.5rem 0;
+            color: var(--dv-text);
+            font-size: 0.92rem;
+            margin: 0.65rem 0 0.55rem;
         }
+
         .timeline-item {
-            border-left: 2px solid #dbeafe;
-            padding: 0.45rem 0 0.45rem 0.8rem;
-            margin-bottom: 0.55rem;
+            border-radius: 16px;
+            border-left: 4px solid rgba(37, 99, 235, 0.45);
+            padding: 0.8rem 0.95rem;
+            margin-bottom: 0.65rem;
         }
+
         .timeline-title {
             font-weight: 700;
-            color: #0f172a;
+            color: var(--dv-text);
+            margin-bottom: 0.15rem;
         }
+
         .timeline-detail {
-            color: #475569;
-            font-size: 0.94rem;
-            margin-top: 0.18rem;
+            margin-top: 0;
         }
+
         .timeline-stamp {
-            color: #64748b;
-            font-size: 0.8rem;
-            margin-top: 0.18rem;
+            margin-top: 0.2rem;
+            font-size: 0.82rem;
         }
+
         .app-topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.65rem 0.9rem;
-            background: #ffffff;
-            border: 1px solid #e5ebf2;
-            border-radius: 14px;
+            border-radius: var(--dv-radius-xl);
+            padding: 0.9rem 1rem;
             margin-bottom: 1rem;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+            box-shadow: var(--dv-shadow-md);
+            position: sticky;
+            top: 0.65rem;
+            z-index: 30;
+            backdrop-filter: blur(16px);
+            background: rgba(255, 255, 255, 0.9);
         }
+
         .topbar-brand {
             display: flex;
             align-items: center;
-            gap: 0.7rem;
+            gap: 0.8rem;
         }
+
         .brand-mark {
-            width: 2.4rem;
-            height: 2.4rem;
+            width: 2.65rem;
+            height: 2.65rem;
             border-radius: 999px;
-            background: linear-gradient(135deg, #2f7d32, #2563eb);
-            display: flex;
+            background: linear-gradient(135deg, var(--dv-accent) 0%, #22c55e 100%);
+            color: white;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
         }
+
         .brand-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #0f172a;
+            font-size: 1.02rem;
+            font-weight: 750;
+            color: var(--dv-text);
         }
+
         .brand-subtitle {
-            font-size: 0.8rem;
-            color: #64748b;
+            font-size: 0.82rem;
+            color: var(--dv-muted);
         }
+
         .topbar-actions {
             display: flex;
-            gap: 0.45rem;
+            gap: 0.5rem;
             flex-wrap: wrap;
+            justify-content: flex-end;
         }
-        .topbar-pill {
-            background: #f8fafc;
-            border: 1px solid #e5ebf2;
+
+        .stSidebar .stButton > button,
+        section[data-testid="stSidebar"] .stButton > button {
+            width: 100% !important;
+        }
+
+        .stSidebar .option-menu,
+        section[data-testid="stSidebar"] .option-menu {
+            width: 100% !important;
+        }
+
+        .topbar-pill,
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
             border-radius: 999px;
-            padding: 0.35rem 0.6rem;
-            color: #334155;
+            padding: 0.35rem 0.7rem;
             font-size: 0.84rem;
+            font-weight: 650;
+            line-height: 1;
+            white-space: nowrap;
         }
+
+        .topbar-pill {
+            background: var(--dv-surface-2);
+            color: var(--dv-text);
+            border: 1px solid var(--dv-border);
+        }
+
         .app-nav-card {
-            background: #ffffff;
-            border: 1px solid #e5ebf2;
-            border-radius: 16px;
-            padding: 0.7rem;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+            background: rgba(15, 23, 42, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--dv-radius-xl);
+            padding: 0.9rem;
+            box-shadow: none;
         }
+
         .nav-action {
             border: 1px solid transparent;
             background: transparent;
-            color: #334155;
-            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.82);
+            border-radius: 12px;
             margin-bottom: 0.35rem;
             text-align: left;
-            padding: 0.55rem 0.65rem;
+            padding: 0.62rem 0.75rem;
         }
+
         .nav-action.active {
-            background: #eff6ff;
-            color: #1d4ed8;
-            border-color: #bfdbfe;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.12);
         }
+
         .metric-title {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-bottom: 0.28rem;
-        }
-        .metric-value {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #0f172a;
             margin-bottom: 0.2rem;
         }
+
         .metric-subtitle {
-            font-size: 0.9rem;
-            color: #475569;
+            margin-top: 0;
         }
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            margin-top: 0.45rem;
+
+        .status-badge.success { background: rgba(21, 128, 61, 0.12); color: var(--dv-success); }
+        .status-badge.warning { background: rgba(180, 83, 9, 0.12); color: var(--dv-warning); }
+        .status-badge.danger { background: rgba(185, 28, 28, 0.12); color: var(--dv-danger); }
+
+        .recommendation-card {
+            border-left: 4px solid rgba(21, 128, 61, 0.55);
         }
-        .sidebar .block-container {
-            padding-top: 0.7rem;
+
+        .alert-card {
+            border-left: 4px solid rgba(185, 28, 28, 0.72);
         }
-        .stButton > button {
-            border-radius: 8px;
-            border: 1px solid #2f7d32;
-            background: #2f7d32;
-            color: white;
+
+        .alert-card.alert-warning {
+            border-left-color: rgba(180, 83, 9, 0.72);
         }
-        .stButton > button:hover {
-            border-color: #1b5e20;
-            background: #27682b;
+
+        .alert-card.alert-info {
+            border-left-color: rgba(37, 99, 235, 0.72);
+        }
+
+        .app-shell-grid {
+            display: grid;
+            grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .shell-sidebar {
+            position: sticky;
+            top: 5.4rem;
+            align-self: start;
+        }
+
+        .shell-main {
+            min-width: 0;
+        }
+
+        .stButton > button,
+        .stDownloadButton > button,
+        .stFormSubmitButton > button {
+            border-radius: 12px !important;
+            border: 1px solid rgba(37, 99, 235, 0.18) !important;
+            background: linear-gradient(180deg, var(--dv-accent) 0%, var(--dv-accent-strong) 100%) !important;
+            color: white !important;
+            font-weight: 650 !important;
+            padding: 0.6rem 0.95rem !important;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.15);
+        }
+
+        .stButton > button:hover,
+        .stDownloadButton > button:hover,
+        .stFormSubmitButton > button:hover {
+            border-color: rgba(37, 99, 235, 0.28) !important;
+            filter: brightness(0.97);
+        }
+
+        .stButton > button:focus-visible,
+        .stDownloadButton > button:focus-visible,
+        .stFormSubmitButton > button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        div[data-baseweb="select"] *:focus-visible {
+            outline: 2px solid rgba(37, 99, 235, 0.3) !important;
+            outline-offset: 2px;
+        }
+
+        .stForm {
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid var(--dv-border);
+            border-radius: var(--dv-radius-lg);
+            padding: 1rem;
+            box-shadow: var(--dv-shadow-sm);
+        }
+
+        .stForm label,
+        .stTextInput label,
+        .stNumberInput label,
+        .stTextArea label,
+        .stSelectbox label,
+        .stMultiSelect label,
+        .stDateInput label,
+        .stRadio label,
+        .stCheckbox label {
+            color: #111827 !important;
+            font-weight: 600 !important;
+        }
+
+        input,
+        textarea,
+        [contenteditable="true"],
+        div[data-baseweb="select"] input {
+            color: #111827 !important;
+            caret-color: #111827 !important;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #6b7280 !important;
+            opacity: 1 !important;
+        }
+
+        input,
+        textarea,
+        div[data-baseweb="select"] > div,
+        div[data-baseweb="base-input"],
+        div[data-baseweb="input"] {
+            background-color: #ffffff !important;
+            color: #111827 !important;
+            border-color: #d1d5db !important;
+        }
+
+        input:focus,
+        textarea:focus,
+        div[data-baseweb="select"] > div:focus-within,
+        div[data-baseweb="base-input"]:focus-within,
+        div[data-baseweb="input"]:focus-within {
+            border-color: var(--dv-accent) !important;
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.14) !important;
+        }
+
+        input:invalid,
+        textarea:invalid {
+            border-color: #dc2626 !important;
+        }
+
+        input:valid,
+        textarea:valid {
+            border-color: #16a34a !important;
+        }
+
+        div[data-baseweb="input"] input,
+        div[data-baseweb="base-input"] input,
+        div[data-baseweb="select"] input {
+            color: #111827 !important;
+        }
+
+        .stTextInput input,
+        .stNumberInput input,
+        .stTextArea textarea,
+        .stSelectbox div[data-baseweb="select"] > div,
+        .stMultiSelect div[data-baseweb="select"] > div,
+        .stDateInput input {
+            border-radius: 12px !important;
+            border-color: #d1d5db !important;
+            background: #ffffff !important;
+            color: #111827 !important;
+            min-height: 2.7rem;
+        }
+
+        .stTextInput input::placeholder,
+        .stNumberInput input::placeholder,
+        .stTextArea textarea::placeholder {
+            color: #6b7280 !important;
+        }
+
+        .stTextInput input,
+        .stNumberInput input,
+        .stTextArea textarea,
+        .stSelectbox div[data-baseweb="select"] > div,
+        .stMultiSelect div[data-baseweb="select"] > div,
+        .stDateInput input {
+            border-radius: 12px !important;
+            border-color: var(--dv-border-strong) !important;
+            background: rgba(255, 255, 255, 0.92) !important;
+            color: #111827 !important;
+            min-height: 2.7rem;
+        }
+
+        div[data-testid="stDataFrame"],
+        div[data-testid="stTable"],
+        div[data-testid="stPlotlyChart"],
+        div[data-testid="stDeckGlJsonChart"] {
+            border-radius: var(--dv-radius-md);
+            overflow: hidden;
+        }
+
+        div[data-testid="stDataFrame"] table {
+            border-collapse: separate !important;
+            border-spacing: 0;
+        }
+
+        .stAlert {
+            border-radius: var(--dv-radius-md) !important;
+            border: 1px solid var(--dv-border) !important;
+            box-shadow: var(--dv-shadow-sm);
+        }
+
+        hr {
+            border-color: rgba(148, 163, 184, 0.2);
+            margin: 1.1rem 0;
+        }
+
+        @media (max-width: 900px) {
+            .app-shell-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .shell-sidebar {
+                position: static;
+            }
+
+            .app-topbar {
+                top: 0.35rem;
+            }
+
+            .block-container {
+                padding-left: 0.85rem !important;
+                padding-right: 0.85rem !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .topbar-actions {
+                justify-content: flex-start;
+            }
+
+            .hero-card,
+            .section-card,
+            .metric-card,
+            .dashboard-card,
+            .recommendation-card,
+            .alert-card {
+                padding: 0.9rem;
+            }
         }
         </style>
         """,
@@ -227,17 +564,17 @@ def apply_app_theme() -> None:
 def render_page_header(title: str, subtitle: str, badge: str | None = None, caption: str | None = None) -> None:
     """Render a polished reusable page header."""
     badge_html = (
-        f"<div style='display:inline-block;padding:0.26rem 0.7rem;border-radius:999px;background:#2f7d32;color:white;font-size:0.78rem;font-weight:700;margin-bottom:0.6rem;'>{badge}</div>"
+        f"<div class='status-badge success' style='margin-bottom:0.6rem;'>{escape(badge)}</div>"
         if badge
         else ""
     )
-    caption_html = f"<div style='color:#475569; margin-top:0.3rem;'>{caption}</div>" if caption else ""
+    caption_html = f"<div class='hero-caption' style='margin-top:0.35rem;'>{escape(caption)}</div>" if caption else ""
     st.markdown(
         f"""
         <div class="hero-card">
           <div>{badge_html}</div>
-          <h2 style="margin:0 0 0.25rem 0; color:#0f172a;">{title}</h2>
-          <div style="color:#475569; font-size:1rem;">{subtitle}</div>
+          <h2 style="margin:0 0 0.25rem 0;">{escape(title)}</h2>
+          <div class="hero-subtitle">{escape(subtitle)}</div>
           {caption_html}
         </div>
         """,
@@ -247,19 +584,19 @@ def render_page_header(title: str, subtitle: str, badge: str | None = None, capt
 
 def render_section_header(title: str, subtitle: str) -> None:
     """Render a standardized header for longer content sections."""
-    st.subheader(title)
-    st.caption(subtitle)
+    st.markdown(f"<div class='section-heading'>{escape(title)}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card-caption'>{escape(subtitle)}</div>", unsafe_allow_html=True)
 
 
 def metric_card(title: str, value: str, subtitle: str, status: str | None = None) -> None:
     """Render a compact KPI card with a clear value and supporting context."""
-    status_html = f"<div class='status-badge' style='background:#ecfdf3;color:#166534;'>{status}</div>" if status else ""
+    status_html = f"<div class='status-badge success'>{escape(status)}</div>" if status else ""
     st.markdown(
         f"""
         <div class="metric-card">
-          <div class="metric-title">{title}</div>
-          <div class="metric-value">{value}</div>
-          <div class="metric-subtitle">{subtitle}</div>
+          <div class="metric-title">{escape(title)}</div>
+          <div class="metric-value">{escape(value)}</div>
+          <div class="metric-subtitle">{escape(subtitle)}</div>
           {status_html}
         </div>
         """,
@@ -269,23 +606,18 @@ def metric_card(title: str, value: str, subtitle: str, status: str | None = None
 
 def status_badge(label: str, tone: str = "success") -> None:
     """Render a small status indicator."""
-    colors = {
-        "success": ("#ecfdf3", "#166534"),
-        "warning": ("#fffbeb", "#92400e"),
-        "danger": ("#fef2f2", "#991b1b"),
-    }
-    bg, color = colors.get(tone, colors["success"])
-    st.markdown(f"<span class='status-badge' style='background:{bg};color:{color};'>{label}</span>", unsafe_allow_html=True)
+    safe_tone = tone if tone in {"success", "warning", "danger"} else "success"
+    st.markdown(f"<span class='status-badge {safe_tone}'>{escape(label)}</span>", unsafe_allow_html=True)
 
 
 def recommendation_panel(title: str, recommendation: str, improvement: str | None = None) -> None:
     """Render a concise recommendation block for operational pages."""
-    gain_html = f"<div style='margin-top:0.45rem;color:#0f172a;'><strong>Expected improvement</strong> {improvement}</div>" if improvement else ""
+    gain_html = f"<div style='margin-top:0.45rem;color:var(--dv-text);'><strong>Expected improvement</strong> {escape(improvement)}</div>" if improvement else ""
     st.markdown(
         f"""
-        <div class="section-card">
-          <div style="font-size:0.82rem;font-weight:700;color:#2f7d32;text-transform:uppercase;letter-spacing:0.04em;">{title}</div>
-          <div style="margin-top:0.35rem;color:#0f172a;font-weight:600;">{recommendation}</div>
+        <div class="recommendation-card">
+          <div class="metric-title" style="color:var(--dv-success);">{escape(title)}</div>
+          <div style="margin-top:0.35rem;color:var(--dv-text);font-weight:650;">{escape(recommendation)}</div>
           {gain_html}
         </div>
         """,
@@ -297,9 +629,9 @@ def warning_banner(text: str) -> None:
     """Render a modest informational banner."""
     st.markdown(
         f"""
-        <div class="section-card" style="border-color:#cbd5e1;background:#f8fafc;">
-          <div style="color:#334155;">{text}</div>
-        </div>
+                <div class="section-card" style="border-color:rgba(148, 163, 184, 0.24);background:rgba(248, 250, 252, 0.92);">
+                    <div style="color:var(--dv-text);">{escape(text)}</div>
+                </div>
         """,
         unsafe_allow_html=True,
     )
@@ -330,5 +662,5 @@ def gauge_chart(value: float, title: str, target: float | None = None) -> go.Fig
             },
         )
     )
-    fig.update_layout(height=240, margin=dict(l=20, r=20, t=40, b=20), paper_bgcolor="white")
+    fig.update_layout(height=240, margin=dict(l=20, r=20, t=40, b=20), paper_bgcolor="#ffffff")
     return fig

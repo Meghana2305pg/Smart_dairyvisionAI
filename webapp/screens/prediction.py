@@ -14,6 +14,7 @@ from webapp.backend_services.weather_service import get_current_weather
 from webapp.components.cards import info_card, recommendation_card
 from webapp.digital_twin.cow_twin import CowTwin
 from webapp.services.cow_service import CowService
+from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def _normalize_observation(observation: Any) -> dict[str, Any]:
@@ -183,11 +184,11 @@ def render_prediction() -> None:
         model_version="1.0.0",
     )
 
-    st.markdown(
-        f"<div style='font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 8px;'>{payload['cow_name']} · Prediction Center</div>",
-        unsafe_allow_html=True,
+    render_page_header(
+        f"{payload['cow_name']} · Prediction Center",
+        "Live milk-yield prediction workspace using the existing backend prediction and explainability services.",
+        badge="Prediction",
     )
-    st.caption("Live milk-yield prediction workspace using the existing backend prediction and explainability services.")
 
     if st.button("Refresh", use_container_width=True):
         st.rerun()
@@ -211,12 +212,12 @@ def render_prediction() -> None:
         info_card("Selected cow", f"{payload['cow_name']} · {payload['cow_id']}")
 
     with right_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Model inputs</div>", unsafe_allow_html=True)
+        render_section_header("Model inputs", "Values used for the current prediction request.")
         for key, value in payload['model_inputs'].items():
             info_card(key.replace('_', ' ').title(), f"{value}")
 
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-    st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Feature importance</div>", unsafe_allow_html=True)
+    render_section_header("Feature importance", "Explainability signals influencing the forecast.")
     if payload['feature_importance']:
         for item in payload['feature_importance'][:5]:
             recommendation_card("SHAP feature", f"{item.get('feature', 'feature')}: {item.get('contribution', 0.0):.3f}", icon="🔍")
@@ -226,7 +227,7 @@ def render_prediction() -> None:
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     chart_col, report_col = st.columns([1.1, 0.9], gap="medium")
     with chart_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Prediction history</div>", unsafe_allow_html=True)
+        render_section_header("Prediction history", "Recent outputs for the selected cow over time.")
         if payload['history']:
             history_df = pd.DataFrame(payload['history'])
             st.line_chart(history_df.set_index("step")["value"])
@@ -234,7 +235,7 @@ def render_prediction() -> None:
             st.info("No prediction history is available yet for this cow.", icon="ℹ️")
 
     with report_col:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>AI recommendations</div>", unsafe_allow_html=True)
+        render_section_header("AI recommendations", "Operational guidance produced by the workspace.")
         if payload['recommendations']:
             for item in payload['recommendations']:
                 recommendation_card("Recommendation", item.get("message", "No guidance available"), icon="💡")

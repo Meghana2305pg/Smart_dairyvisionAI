@@ -9,9 +9,10 @@ from webapp.backend_services.feature_service import get_feature_defaults
 from webapp.backend_services.health_service import get_health_alerts_for_input
 from webapp.backend_services.prediction_service import predict_milk_yield
 from webapp.backend_services.weather_service import get_current_weather
-from webapp.components.cards import alert_card, info_card, metric_card, recommendation_card
+from webapp.components.cards import alert_card, metric_card, recommendation_card
 from webapp.components.timeline import render_activity_timeline
 from webapp.services.dashboard_service import DashboardService
+from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def _get_latest_twin_snapshot(cow_service: Any, cow_id: str | None) -> Any | None:
@@ -29,7 +30,11 @@ def _get_latest_twin_snapshot(cow_service: Any, cow_id: str | None) -> Any | Non
 
 def render_dashboard() -> None:
     """Render the main dashboard screen."""
-    st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
+    render_page_header(
+        "Dashboard",
+        "Monitor herd performance, predictions, alerts, and the latest operational signals in one workspace.",
+        badge="Overview",
+    )
     with st.spinner("Loading latest dashboard context..."):
         col1, col2, col3, col4 = st.columns(4, gap="medium")
 
@@ -108,10 +113,10 @@ def render_dashboard() -> None:
     col1, col2 = st.columns(2, gap="medium")
 
     with col1:
-        st.markdown("<div style='font-size: 18px; font-weight: 700; margin-bottom: 16px;'>AI Recommendations</div>", unsafe_allow_html=True)
+        render_section_header("AI Recommendations", "Operational guidance generated from the latest context.")
         recommendations = dashboard.recommendations or []
         if recommendations:
-            for rec in recommendations[:2]:
+            for rec in recommendations[:3]:
                 message = rec.get("message") if isinstance(rec, dict) else (rec.message if hasattr(rec, "message") else str(rec))
                 recommendation_card(
                     title="Operational Insight",
@@ -122,7 +127,7 @@ def render_dashboard() -> None:
             st.info("No recommendations generated yet.", icon="ℹ️")
 
     with col2:
-        st.markdown("<div style='font-size: 18px; font-weight: 700; margin-bottom: 16px;'>Active Alerts</div>", unsafe_allow_html=True)
+        render_section_header("Active Alerts", "Current alerts that may need attention.")
         alerts = [
             ("High Temperature Alert", "3 cows affected", "warning", "15 min ago"),
             ("High Somatic Cell Count", "2 cows require attention", "warning", "1h ago"),
@@ -139,20 +144,21 @@ def render_dashboard() -> None:
     st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 
     # Third Row: Activity Timeline and Quick Actions
-    col1, col2 = st.columns([1.5, 1], gap="medium")
+    col1, col2 = st.columns([1.65, 1], gap="medium")
 
     with col1:
-        st.markdown("<div style='font-size: 18px; font-weight: 700; margin-bottom: 16px;'>Recent Activity</div>", unsafe_allow_html=True)
+        render_section_header("Recent Activity", "Recent operational events and activity history.")
         activity_items = [
             ("10:30 AM", "Observation recorded", "The latest observation was recorded and linked to the active twin."),
             ("09:15 AM", "Prediction generated", "The milk yield forecast was refreshed from the latest operational inputs."),
             ("08:45 AM", "Health alert resolved", "The current state was assessed against the health service recommendation engine."),
             ("07:30 AM", "Daily report generated", "32 cows processed"),
+            ("06:45 AM", "Farm workspace synced", "Workspace state was refreshed and persisted for the current session."),
         ]
         render_activity_timeline(activity_items)
 
     with col2:
-        st.markdown("<div style='font-size: 18px; font-weight: 700; margin-bottom: 16px;'>Quick Actions</div>", unsafe_allow_html=True)
+        render_section_header("Quick Actions", "Jump straight into the most common operational flows.")
 
         action_col1, action_col2 = st.columns(2, gap="small")
         with action_col1:
@@ -175,32 +181,6 @@ def render_dashboard() -> None:
 
         if st.button("📋 Generate Daily Report", use_container_width=True):
             st.success("Report generated!")
-
-    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-
-    # Fourth Row: Digital Twin Status
-    col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
-
-    with col1:
-        info_card(
-            title="Twin Status",
-            content="✅ Synced",
-            footer="Last sync: Just now",
-        )
-
-    with col2:
-        info_card(
-            title="Data Points",
-            content=str(dashboard.herd.get("snapshot_count", 0)),
-            footer="Stored in memory",
-        )
-
-    with col3:
-        info_card(
-            title="Model Version",
-            content="v2.3.1",
-            footer="Latest deployment",
-        )
 
     # Clear refresh flag after rendering so future renders show current data
     if st.session_state.get("dashboard_needs_refresh"):

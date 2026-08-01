@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from html import escape
+
 from typing import Any
 
 import streamlit as st
@@ -7,19 +9,15 @@ import streamlit as st
 
 def info_card(title: str, value: str, caption: str, tone: str = "neutral") -> None:
     """Render a compact dashboard card with a soft SaaS look."""
-    tone_styles = {
-        "neutral": ("#eff6ff", "#2563eb"),
-        "success": ("#ecfdf3", "#166534"),
-        "warning": ("#fffbeb", "#92400e"),
-        "danger": ("#fef2f2", "#991b1b"),
-    }
-    bg, color = tone_styles.get(tone, tone_styles["neutral"])
+    tone_styles = {"neutral": "neutral", "success": "success", "warning": "warning", "danger": "danger"}
+    safe_tone = tone_styles.get(tone, "neutral")
     st.markdown(
         f"""
         <div class="dashboard-card">
-          <div class="card-title">{title}</div>
-          <div class="card-value">{value}</div>
-          <div class="card-caption">{caption}</div>
+          <div class="card-title">{escape(title)}</div>
+          <div class="card-value">{escape(value)}</div>
+          <div class="card-caption">{escape(caption)}</div>
+          <div class="status-badge {safe_tone}" style='margin-top:0.65rem;'>Updated</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -38,9 +36,9 @@ def timeline_item(title: str, detail: str, stamp: str) -> None:
     st.markdown(
         f"""
         <div class="timeline-item">
-          <div class="timeline-title">{title}</div>
-          <div class="timeline-detail">{detail}</div>
-          <div class="timeline-stamp">{stamp}</div>
+                    <div class="timeline-title">{escape(title)}</div>
+                    <div class="timeline-detail">{escape(detail)}</div>
+                    <div class="timeline-stamp">{escape(stamp)}</div>
         </div>
         """,
         unsafe_allow_html=True,

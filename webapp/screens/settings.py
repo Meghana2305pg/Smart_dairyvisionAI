@@ -4,17 +4,17 @@ from __future__ import annotations
 import streamlit as st
 
 from webapp.components.cards import info_card
+from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def render_settings() -> None:
     """Render the settings screen."""
-    st.markdown("<div style='font-size: 24px; font-weight: 700; margin-bottom: 8px;'>Settings</div>", unsafe_allow_html=True)
-    st.markdown("<div style='color: #475569; margin-bottom: 20px;'>Manage your account and application preferences.</div>", unsafe_allow_html=True)
+    render_page_header("Settings", "Manage your account and application preferences.", badge="Profile")
 
     tab1, tab2, tab3 = st.tabs(["Account", "Preferences", "System"])
 
     with tab1:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 16px;'>Account Information</div>", unsafe_allow_html=True)
+        render_section_header("Account Information", "Review the current user profile details.")
 
         user = st.session_state.get("user", {})
         col1, col2 = st.columns(2, gap="medium")
@@ -30,7 +30,7 @@ def render_settings() -> None:
             st.info("Profile edit functionality coming soon.")
 
     with tab2:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 16px;'>Application Preferences</div>", unsafe_allow_html=True)
+        render_section_header("Application Preferences", "Visual and notification preferences for the app.")
 
         theme = st.selectbox("Theme", ["Light", "Dark", "Auto"], value="Light")
         notifications = st.checkbox("Enable notifications", value=True)
@@ -42,7 +42,7 @@ def render_settings() -> None:
             st.success("Preferences saved!")
 
     with tab3:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 16px;'>System Information</div>", unsafe_allow_html=True)
+        render_section_header("System Information", "App and runtime details for quick reference.")
 
         col1, col2 = st.columns(2, gap="medium")
         with col1:

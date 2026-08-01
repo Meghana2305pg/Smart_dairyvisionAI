@@ -1,6 +1,8 @@
 """Reusable card components for the dashboard."""
 from __future__ import annotations
 
+from html import escape
+
 import streamlit as st
 
 
@@ -11,57 +13,18 @@ def metric_card(
     subtitle: str = "",
     status: str | None = None,
 ) -> None:
-    """
-    Render a professional metric card.
-
-    Args:
-        icon: Emoji icon for the card
-        title: Card title
-        value: Main metric value
-        subtitle: Secondary text
-        status: Optional status indicator (e.g., "↑ 8.6% vs yesterday")
-    """
-    status_html = f"<div style='color: #64748b; font-size: 12px; margin-top: 6px;'>{status}</div>" if status else ""
+    """Render a professional metric card."""
+    status_html = f"<div class='status-badge success' style='margin-top:0.45rem;'>{escape(status)}</div>" if status else ""
 
     st.markdown(
         f"""
-        <div style='
-            background: white;
-            border: 1px solid #e5ebf2;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-            min-height: 140px;
-            display: flex;
-            flex-direction: column;
-        '>
-            <div style='
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 12px;
-            '>
-                <div style='font-size: 28px;'>{icon}</div>
+        <div class="metric-card">
+            <div style='display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;margin-bottom:0.15rem;'>
+                <div style='font-size:1.5rem;line-height:1;'>{escape(icon)}</div>
             </div>
-            <div style='
-                font-size: 12px;
-                color: #64748b;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                margin-bottom: 8px;
-            '>{title}</div>
-            <div style='
-                font-size: 24px;
-                font-weight: 700;
-                color: #0f172a;
-                margin-bottom: 4px;
-            '>{value}</div>
-            <div style='
-                font-size: 13px;
-                color: #475569;
-                margin-bottom: 8px;
-            '>{subtitle}</div>
+            <div class="metric-title">{escape(title)}</div>
+            <div class="metric-value">{escape(value)}</div>
+            <div class="metric-subtitle">{escape(subtitle)}</div>
             {status_html}
         </div>
         """,
@@ -74,38 +37,14 @@ def info_card(
     content: str,
     footer: str = "",
 ) -> None:
-    """
-    Render an info card with title and content.
-
-    Args:
-        title: Card title
-        content: Main content
-        footer: Optional footer text
-    """
-    footer_html = f"<div style='font-size: 12px; color: #64748b; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5ebf2;'>{footer}</div>" if footer else ""
+    """Render an info card with title and content."""
+    footer_html = f"<div class='card-caption' style='margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid rgba(148, 163, 184, 0.16);'>{escape(footer)}</div>" if footer else ""
 
     st.markdown(
         f"""
-        <div style='
-            background: white;
-            border: 1px solid #e5ebf2;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-        '>
-            <div style='
-                font-size: 12px;
-                color: #64748b;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.04em;
-                margin-bottom: 12px;
-            '>{title}</div>
-            <div style='
-                font-size: 14px;
-                color: #0f172a;
-                line-height: 1.5;
-            '>{content}</div>
+        <div class="dashboard-card">
+            <div class="card-title">{escape(title)}</div>
+            <div style='font-size:0.96rem;color:var(--dv-text);line-height:1.55;'>{escape(content)}</div>
             {footer_html}
         </div>
         """,
@@ -119,19 +58,11 @@ def alert_card(
     severity: str = "warning",
     timestamp: str = "",
 ) -> None:
-    """
-    Render an alert card.
-
-    Args:
-        title: Alert title
-        message: Alert message
-        severity: "info", "warning", or "danger"
-        timestamp: Optional timestamp
-    """
+    """Render an alert card."""
     severity_colors = {
-        "info": ("#0ea5e9", "#164e63"),
-        "warning": ("#f59e0b", "#78350f"),
-        "danger": ("#ef4444", "#7c2d12"),
+        "info": ("#0ea5e9", "#eff8ff"),
+        "warning": ("#f59e0b", "#fff8ea"),
+        "danger": ("#ef4444", "#fff1f2"),
     }
     color, bg_color = severity_colors.get(severity, severity_colors["info"])
     icons = {
@@ -141,37 +72,16 @@ def alert_card(
     }
     icon = icons.get(severity, "ℹ️")
 
-    timestamp_html = f"<div style='font-size: 12px; color: #64748b; margin-top: 8px;'>{timestamp}</div>" if timestamp else ""
+    timestamp_html = f"<div class='timeline-stamp' style='margin-top:0.45rem;'>{escape(timestamp)}</div>" if timestamp else ""
 
     st.markdown(
         f"""
-        <div style='
-            background: white;
-            border-left: 4px solid {color};
-            border: 1px solid #e5ebf2;
-            border-left: 4px solid {color};
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-        '>
-            <div style='
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-bottom: 6px;
-            '>
-                <span style='font-size: 18px;'>{icon}</span>
-                <div style='
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #0f172a;
-                '>{title}</div>
+        <div class="alert-card alert-{severity}" style='border-left-color:{color};background:{bg_color};'>
+            <div style='display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;'>
+                <span style='font-size:1rem;line-height:1;'>{escape(icon)}</span>
+                <div class='card-title' style='margin-bottom:0;'>{escape(title)}</div>
             </div>
-            <div style='
-                font-size: 13px;
-                color: #475569;
-                margin-left: 26px;
-            '>{message}</div>
+            <div class='card-caption' style='color:var(--dv-text);'>{escape(message)}</div>
             {timestamp_html}
         </div>
         """,
@@ -184,42 +94,15 @@ def recommendation_card(
     description: str,
     icon: str = "💡",
 ) -> None:
-    """
-    Render a recommendation card.
-
-    Args:
-        title: Recommendation title
-        description: Detailed description
-        icon: Emoji icon
-    """
+    """Render a recommendation card."""
     st.markdown(
         f"""
-        <div style='
-            background: white;
-            border: 1px solid #e5ebf2;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-            border-left: 4px solid #2f7d32;
-        '>
-            <div style='
-                display: flex;
-                align-items: flex-start;
-                gap: 12px;
-            '>
-                <div style='font-size: 20px;'>{icon}</div>
-                <div style='flex: 1;'>
-                    <div style='
-                        font-size: 14px;
-                        font-weight: 600;
-                        color: #0f172a;
-                        margin-bottom: 4px;
-                    '>{title}</div>
-                    <div style='
-                        font-size: 13px;
-                        color: #475569;
-                        line-height: 1.4;
-                    '>{description}</div>
+        <div class="recommendation-card">
+            <div style='display:flex;align-items:flex-start;gap:0.8rem;'>
+                <div style='font-size:1.1rem;line-height:1;'>{escape(icon)}</div>
+                <div style='flex:1;min-width:0;'>
+                    <div class='card-title' style='margin-bottom:0.3rem;color:var(--dv-success);'>{escape(title)}</div>
+                    <div class='card-caption' style='line-height:1.45;'>{escape(description)}</div>
                 </div>
             </div>
         </div>

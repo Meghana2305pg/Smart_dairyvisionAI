@@ -10,6 +10,7 @@ from webapp.screens.activity_feed import build_activity_feed
 from webapp.screens.live_alerts import build_alert_groups
 from webapp.screens.system_health import build_system_health_payload
 from webapp.screens.weather_monitor import build_weather_payload
+from webapp.ui.section_header import render_page_header, render_section_header
 
 
 def _normalise_cows(cows: Any) -> list[dict[str, Any]]:
@@ -123,8 +124,11 @@ def build_command_centre_context(
 
 def render_command_centre() -> None:
     """Render the command centre screen."""
-    st.markdown("<div style='font-size: 24px; font-weight: 700; margin-bottom: 8px;'>Command Centre</div>", unsafe_allow_html=True)
-    st.markdown("<div style='color: #475569; margin-bottom: 20px;'>Monitor the herd, twin health, weather, and operational alerts in one workspace.</div>", unsafe_allow_html=True)
+    render_page_header(
+        "Command Centre",
+        "Monitor the herd, twin health, weather, and operational alerts in one workspace.",
+        badge="Operations",
+    )
 
     dashboard_service = st.session_state.get("dashboard_service")
     cows = st.session_state.get("cows", [])
@@ -177,21 +181,21 @@ def render_command_centre() -> None:
     with tab1:
         left_col, right_col = st.columns([1.4, 1], gap="medium")
         with left_col:
-            st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Twin Monitor</div>", unsafe_allow_html=True)
+            render_section_header("Twin Monitor", "Track the live twin status for each cow.")
             if context["twin_monitor"]:
                 for item in context["twin_monitor"]:
                     st.info(f"{item['name']} • {item['cow_id']} • {item['status']}", icon="🧠")
             else:
                 st.info("No twin data is available yet.", icon="ℹ️")
         with right_col:
-            st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Weather Snapshot</div>", unsafe_allow_html=True)
+            render_section_header("Weather Snapshot", "Current ambient conditions and heat stress signals.")
             st.metric("Temperature", f"{context['weather']['temperature']:.1f} °C")
             st.metric("Humidity", f"{context['weather']['humidity']:.1f} %")
             st.metric("THI", f"{context['weather']['thi']:.1f}")
             st.metric("Heat Stress", context["weather"]["heat_stress"])
 
     with tab2:
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Operations Controls</div>", unsafe_allow_html=True)
+        render_section_header("Operations Controls", "Refresh the workspace or review generated actions.")
         if st.button("Refresh Workspace", use_container_width=True):
             st.session_state["dashboard_needs_refresh"] = True
             st.success("Workspace refreshed.")
@@ -202,7 +206,7 @@ def render_command_centre() -> None:
             st.info("Snapshot export will be enabled in a future release.")
 
         st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Recommendation Centre</div>", unsafe_allow_html=True)
+        render_section_header("Recommendation Centre", "Operational guidance and follow-up actions.")
         if context["recommendations"]["health"]:
             for item in context["recommendations"]["health"]:
                 st.warning(f"{item.get('priority', 'Low')} • {item.get('message', 'Keep monitoring')}", icon="💡")
@@ -212,7 +216,7 @@ def render_command_centre() -> None:
     with tab3:
         alert_col, activity_col = st.columns([1, 1], gap="medium")
         with alert_col:
-            st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Alert Groups</div>", unsafe_allow_html=True)
+            render_section_header("Alert Groups", "Grouped alerts by severity and source.")
             for label, items in context["alerts"].items():
                 if items:
                     st.caption(f"{label.title()} alerts")
@@ -221,7 +225,7 @@ def render_command_centre() -> None:
                 else:
                     st.info(f"No {label} alerts", icon="ℹ️")
         with activity_col:
-            st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>Recent Activity</div>", unsafe_allow_html=True)
+            render_section_header("Recent Activity", "Recent events and operational updates.")
             if context["activity_feed"]:
                 for item in context["activity_feed"]:
                     st.success(f"{item['cow_id']} • {item['summary']}", icon="📝")
@@ -229,6 +233,6 @@ def render_command_centre() -> None:
                 st.info("No recent activity is available yet.", icon="ℹ️")
 
             st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
-            st.markdown("<div style='font-size: 16px; font-weight: 700; margin-bottom: 10px;'>System Health</div>", unsafe_allow_html=True)
+            render_section_header("System Health", "Summary state of the supporting services.")
             for key, value in context["system_health"].items():
                 st.caption(f"{key.replace('_', ' ').title()}: {value}")

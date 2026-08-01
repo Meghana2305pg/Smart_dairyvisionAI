@@ -16,6 +16,14 @@
         "/^python -m unittest tests\\.test_command_centre_workspace$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^python -m pytest tests/test_webapp_ui\\.py$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^python tests/test_webapp_ui\\.py$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }
