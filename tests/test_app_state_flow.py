@@ -7,14 +7,19 @@ from webapp.app import _prepare_workspace_state, initialize_app_state, update_ap
 from webapp.state.session_state import APP_STATE_AUTHENTICATED_NO_FARM, APP_STATE_AUTHENTICATED_WITH_FARM, APP_STATE_NOT_AUTHENTICATED
 
 
+from webapp.repositories.supabase_client import SupabaseClient
+
+
 class AppStateFlowTests(unittest.TestCase):
     def setUp(self) -> None:
         st.session_state.clear()
         st.query_params.clear()
+        SupabaseClient.from_env().reset_in_memory_store()
 
     def tearDown(self) -> None:
         st.session_state.clear()
         st.query_params.clear()
+        SupabaseClient.from_env().reset_in_memory_store()
 
     def test_initialize_app_state_bootstraps_once_and_preserves_authenticated_state(self) -> None:
         initialize_app_state()

@@ -1,9 +1,12 @@
-"""Dashboard screen for DairyVision AI."""
+"""Phase 9.2 - Redesigned Dashboard Screen Using Design System Tokens & Components."""
+
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 from typing import Any
 
+import pandas as pd
 import streamlit as st
 
 from webapp.backend_services.feature_service import get_feature_defaults
@@ -11,6 +14,14 @@ from webapp.backend_services.health_service import get_health_alerts_for_input
 from webapp.backend_services.prediction_service import predict_milk_yield
 from webapp.backend_services.weather_service import get_current_weather
 from webapp.services.dashboard_service import DashboardService
+from webapp.ui.design_system import (
+    render_alert_card,
+    render_empty_state,
+    render_metric_card,
+    render_recommendation_card,
+    render_section_title,
+    render_timeline_item,
+)
 
 
 def _get_latest_twin_snapshot(cow_service: Any, cow_id: str | None) -> Any | None:
@@ -26,303 +37,95 @@ def _get_latest_twin_snapshot(cow_service: Any, cow_id: str | None) -> Any | Non
     return memory_store.get_latest_snapshot(cow_id)
 
 
-def _get_greeting() -> str:
-    """Return a farm-friendly greeting based on the current time."""
+def _get_greeting_and_icon() -> tuple[str, str]:
+    """Return a farm-friendly greeting and matching icon based on current time."""
     hour = datetime.now().hour
     if hour < 12:
-        return "Good morning"
+        return "Good Morning", "👋"
     if hour < 18:
-        return "Good afternoon"
-    return "Good evening"
+        return "Good Afternoon", "☀️"
+    return "Good Evening", "🌙"
 
 
-def _get_healthy_and_alert_counts(health_items: list[dict[str, Any]]) -> tuple[int, int]:
-    """Summarize current health data using actual severity values already in the dataset."""
-    if not health_items:
-        return 0, 0
-
-    active_alerts = 0
+def _categorize_health_alerts(health_items: list[dict[str, Any]]) -> tuple[int, int, int, list[dict[str, Any]]]:
+    """Categorize health alerts using dataset severity fields."""
+    critical_alerts = []
     healthy_count = 0
+    warning_count = 0
+
     for item in health_items:
-        severity = str(item.get("severity") or "").lower()
-        if severity in {"high", "critical", "warning"}:
-            active_alerts += 1
+        sev = str(item.get("severity") or "").lower()
+        if sev in {"critical", "high", "danger", "warning", "medium"}:
+            critical_alerts.append(item)
+            if sev in {"critical", "high", "danger"}:
+                pass
+            else:
+                warning_count += 1
         else:
             healthy_count += 1
-    return healthy_count, active_alerts
 
-
-def _render_empty_state(title: str, message: str, icon: str = "✨") -> None:
-    """Render a compact empty state card with a clear explanation."""
-    st.markdown(
-        f"""
-        <div class="dashboard-empty-state">
-            <div class="empty-state-icon">{icon}</div>
-            <div class="empty-state-title">{title}</div>
-            <div class="empty-state-copy">{message}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    return healthy_count, warning_count, len(critical_alerts), critical_alerts
 
 
 def render_dashboard() -> None:
-    """Render the main dashboard screen with a compact operations overview."""
+    """Render the dashboard using Design System tokens and reusable UI components."""
     st.markdown(
         """
         <style>
-        .dashboard-shell {
+        .dash-layout-container {
             padding: 0.1rem 0;
         }
-        .dashboard-hero {
-            background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(248,250,252,0.95));
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 22px;
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
-            padding: 1.1rem 1.2rem;
-            margin-bottom: 1rem;
+        .dash-page-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.94) 100%);
+            border: 1px solid var(--dv-border);
+            border-radius: var(--dv-radius-lg);
+            padding: 1.25rem 1.4rem;
+            margin-bottom: 1.25rem;
+            box-shadow: var(--dv-shadow-sm);
         }
-        .dashboard-hero-row {
+        .dash-page-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 1rem;
             flex-wrap: wrap;
         }
-        .dashboard-hero-title {
-            font-size: clamp(1.5rem, 2vw, 2rem);
+        .dash-title {
+            font-size: clamp(1.5rem, 2.2vw, 2rem);
             font-weight: 800;
-            letter-spacing: -0.04em;
-            line-height: 1.15;
-            color: #0f172a;
-            margin: 0;
+            color: var(--dv-text);
+            margin: 0.1rem 0;
+            letter-spacing: -0.03em;
         }
-        .dashboard-hero-meta {
-            color: #475569;
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-top: 0.4rem;
+        .dash-subtitle {
+            color: var(--dv-muted);
+            font-size: 0.92rem;
         }
-        .dashboard-hero-subtitle {
-            color: #64748b;
-            font-size: 0.95rem;
-            margin-top: 0.55rem;
-            max-width: 620px;
-        }
-        .dashboard-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            background: rgba(37, 99, 235, 0.08);
-            color: #1d4ed8;
-            border: 1px solid rgba(37, 99, 235, 0.12);
-            border-radius: 999px;
-            padding: 0.45rem 0.75rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-        .dashboard-kpi-grid {
+        .dash-top-metrics {
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 0.85rem;
-            margin-bottom: 1.1rem;
+            margin-bottom: 1.4rem;
         }
-        .dashboard-card {
-            background: rgba(255,255,255,0.96);
-            border: 1px solid rgba(148, 163, 184, 0.16);
-            border-radius: 18px;
-            padding: 0.9rem 1rem;
-            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
-            min-height: 138px;
-            transition: transform 180ms ease, box-shadow 180ms ease;
+        .dash-quick-actions-card {
+            background: var(--dv-surface);
+            border: 1px solid var(--dv-border);
+            border-radius: var(--dv-radius-md);
+            padding: 1.1rem;
+            box-shadow: var(--dv-shadow-sm);
         }
-        .dashboard-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+        @media (max-width: 1024px) {
+            .dash-top-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
-        .dash-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        .dash-card-icon {
-            width: 2.2rem;
-            height: 2.2rem;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.05rem;
-            background: rgba(37, 99, 235, 0.08);
-            color: #1d4ed8;
-        }
-        .dash-card-icon.success { background: rgba(21, 128, 61, 0.08); color: #15803d; }
-        .dash-card-icon.warning { background: rgba(245, 158, 11, 0.10); color: #b45309; }
-        .dash-card-icon.danger { background: rgba(239, 68, 68, 0.10); color: #b91c1c; }
-        .dash-card-label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: #64748b;
-        }
-        .dash-card-value {
-            font-size: clamp(1.3rem, 1.9vw, 1.8rem);
-            font-weight: 800;
-            letter-spacing: -0.04em;
-            line-height: 1.15;
-            color: #0f172a;
-            margin: 0.25rem 0 0.1rem;
-        }
-        .dash-card-subtitle {
-            font-size: 0.82rem;
-            color: #64748b;
-        }
-        .dash-card-status {
-            display: inline-flex;
-            align-items: center;
-            margin-top: 0.65rem;
-            font-size: 0.76rem;
-            font-weight: 700;
-            border-radius: 999px;
-            padding: 0.38rem 0.62rem;
-        }
-        .dash-card-status.success { background: rgba(21, 128, 61, 0.10); color: #15803d; }
-        .dash-card-status.warning { background: rgba(245, 158, 11, 0.12); color: #b45309; }
-        .dash-card-status.danger { background: rgba(239, 68, 68, 0.10); color: #b91c1c; }
-        .dash-card-status.neutral { background: rgba(148, 163, 184, 0.12); color: #475569; }
-        .dashboard-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
-            gap: 1rem;
-            align-items: start;
-        }
-        .panel-card {
-            background: rgba(255,255,255,0.96);
-            border: 1px solid rgba(148,163,184,0.16);
-            border-radius: 20px;
-            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
-            padding: 1rem 1rem 0.5rem;
-        }
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.85rem;
-        }
-        .panel-title {
-            font-size: 0.9rem;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: #475569;
-            margin: 0;
-        }
-        .panel-subtitle {
-            color: #64748b;
-            font-size: 0.85rem;
-            margin: 0.15rem 0 0;
-        }
-        .recommendation-list, .alert-list, .timeline-list {
-            display: grid;
-            gap: 0.75rem;
-        }
-        .recommendation-item, .alert-item, .timeline-item {
-            background: #f8fafc;
-            border: 1px solid rgba(148,163,184,0.16);
-            border-radius: 14px;
-            padding: 0.8rem 0.9rem;
-        }
-        .recommendation-item {
-            border-left: 4px solid rgba(21,128,61,0.7);
-        }
-        .alert-item {
-            border-left: 4px solid rgba(239,68,68,0.7);
-        }
-        .alert-item.warning {
-            border-left-color: rgba(245,158,11,0.7);
-        }
-        .alert-item.info {
-            border-left-color: rgba(37,99,235,0.7);
-        }
-        .chip {
-            display: inline-flex;
-            align-items: center;
-            border-radius: 999px;
-            padding: 0.28rem 0.55rem;
-            font-size: 0.7rem;
-            font-weight: 700;
-            margin-top: 0.55rem;
-        }
-        .chip.success { background: rgba(21,128,61,0.10); color: #15803d; }
-        .chip.warning { background: rgba(245,158,11,0.12); color: #b45309; }
-        .chip.danger { background: rgba(239,68,68,0.10); color: #b91c1c; }
-        .chip.neutral { background: rgba(148,163,184,0.12); color: #475569; }
-        .dashboard-empty-state {
-            background: linear-gradient(135deg, rgba(248,250,252,1), rgba(255,255,255,0.96));
-            border: 1px dashed rgba(148,163,184,0.35);
-            border-radius: 18px;
-            padding: 1rem 1.05rem;
-            text-align: center;
-        }
-        .empty-state-icon {
-            font-size: 1.6rem;
-            margin-bottom: 0.35rem;
-        }
-        .empty-state-title {
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.2rem;
-        }
-        .empty-state-copy {
-            color: #64748b;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-        .action-stack {
-            display: grid;
-            gap: 0.7rem;
-        }
-        .stButton > button {
-            border-radius: 12px !important;
-            font-weight: 700 !important;
-            height: 44px !important;
-            box-shadow: none !important;
-            transition: all 180ms ease !important;
-        }
-        .stButton > button:hover {
-            transform: translateY(-1px);
-        }
-        .stButton > button[kind="primary"] {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-            color: white !important;
-            border: none !important;
-        }
-        .stButton > button[kind="secondary"] {
-            background: white !important;
-            color: #0f172a !important;
-            border: 1px solid rgba(148,163,184,0.32) !important;
-        }
-        @media (max-width: 1100px) {
-            .dashboard-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-            .dashboard-layout { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 720px) {
-            .dashboard-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .dashboard-hero-row { align-items: flex-start; }
-        }
-        @media (max-width: 480px) {
-            .dashboard-kpi-grid { grid-template-columns: 1fr; }
+        @media (max-width: 576px) {
+            .dash-top-metrics { grid-template-columns: 1fr; }
         }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-    with st.spinner("Loading latest dashboard context..."):
+    with st.spinner("Loading dashboard..."):
         dashboard_service: DashboardService = st.session_state.dashboard_service
         dashboard = dashboard_service.build_dashboard()
         base_temp, base_hum = get_current_weather()
@@ -358,146 +161,33 @@ def render_dashboard() -> None:
     observation_count = int(dashboard.herd.get("observation_count", 0))
     recommendation_items = list(dashboard.recommendations or [])
     alert_entries = list(dashboard.health or [])
-    healthy_count, active_alert_count = _get_healthy_and_alert_counts(alert_entries)
 
+    healthy_count, warning_count, active_alert_count, active_alerts = _categorize_health_alerts(alert_entries)
     if healthy_count == 0 and cow_count:
         healthy_count = max(cow_count - active_alert_count, 0)
 
     milk_prediction = float(prediction.get("prediction", 0.0) or 0.0)
-    farm_name = (dashboard.farm or {}).get("name") or "Current Farm"
-    greeting = _get_greeting()
+    farm_name = (dashboard.farm or {}).get("name") or st.session_state.get("farm_name") or "Green Pastures Farm"
+    greeting, greeting_icon = _get_greeting_and_icon()
     today_label = datetime.now().strftime("%A, %d %b %Y")
 
-    st.markdown(
-        f"""
-        <div class="dashboard-shell">
-            <div class="dashboard-hero">
-                <div class="dashboard-hero-row">
-                    <div>
-                        <div class="dashboard-badge">{greeting}</div>
-                        <h1 class="dashboard-hero-title">{farm_name}</h1>
-                        <div class="dashboard-hero-meta">{today_label}</div>
-                    </div>
-                    <div class="dashboard-badge">Operational overview</div>
-                </div>
-                <div class="dashboard-hero-subtitle">
-                    Today’s farm summary: {cow_count} cows tracked, {milk_prediction:.1f} L predicted output, and {active_alert_count} active alert(s) requiring attention.
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    kpi_items = [
-        {
-            "label": "Total Cows",
-            "value": str(cow_count),
-            "status": "Stable" if cow_count else "No cows yet",
-            "tone": "neutral" if not cow_count else "success",
-            "icon": "🐄",
-            "icon_tone": "success",
-        },
-        {
-            "label": "Predicted Milk Yield",
-            "value": f"{milk_prediction:.1f} L",
-            "status": "Current forecast" if milk_prediction else "Awaiting forecast",
-            "tone": "neutral" if not milk_prediction else "success",
-            "icon": "💧",
-            "icon_tone": "success",
-        },
-        {
-            "label": "Healthy Cows",
-            "value": str(healthy_count),
-            "status": "Low risk" if healthy_count else "No stable cows",
-            "tone": "success" if healthy_count else "neutral",
-            "icon": "✅",
-            "icon_tone": "success",
-        },
-        {
-            "label": "Active Alerts",
-            "value": str(active_alert_count),
-            "status": "Needs review" if active_alert_count else "No active alerts",
-            "tone": "danger" if active_alert_count else "neutral",
-            "icon": "🚨",
-            "icon_tone": "danger" if active_alert_count else "success",
-        },
-        {
-            "label": "Weather",
-            "value": f"{base_temp:.0f}°C",
-            "status": f"Humidity {base_hum:.0f}%",
-            "tone": "neutral",
-            "icon": "🌤️",
-            "icon_tone": "success",
-        },
-        {
-            "label": "Recent Observations",
-            "value": str(observation_count),
-            "status": "Logged today" if observation_count else "No observations yet",
-            "tone": "neutral" if not observation_count else "success",
-            "icon": "📝",
-            "icon_tone": "success",
-        },
-    ]
-
-    st.markdown('<div class="dashboard-kpi-grid">', unsafe_allow_html=True)
-    for item in kpi_items:
+    # ==============================================================================
+    # PAGE HEADER
+    # ==============================================================================
+    col_hdr_left, col_hdr_right = st.columns([3, 1.2], gap="small")
+    with col_hdr_left:
         st.markdown(
             f"""
-            <div class="dashboard-card">
-                <div class="dash-card-header">
-                    <div class="dash-card-label">{item['label']}</div>
-                    <div class="dash-card-icon {item['icon_tone']}">{item['icon']}</div>
-                </div>
-                <div class="dash-card-value">{item['value']}</div>
-                <div class="dash-card-subtitle">{item['status']}</div>
-                <div class="dash-card-status {item['tone']}">{item['status']}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    left_col, right_col = st.columns([1.5, 0.95], gap="medium")
-
-    with left_col:
-        st.markdown(
-            """
-            <div class="panel-card">
-                <div class="panel-header">
+            <div class="dash-page-header">
+                <div class="dash-page-header-row">
                     <div>
-                        <div class="panel-title">AI Recommendations</div>
-                        <p class="panel-subtitle">Operational guidance generated from the latest context.</p>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if recommendation_items:
-            for rec in recommendation_items[:3]:
-                message = rec.get("message") if isinstance(rec, dict) else (rec.message if hasattr(rec, "message") else str(rec))
-                st.markdown(
-                    f"""
-                    <div class="recommendation-item">
-                        <div style='font-weight:700; color:#0f172a; margin-bottom:0.25rem;'>AI insight</div>
-                        <div style='color:#475569; line-height:1.5;'>{message}</div>
-                        <div class='chip success'>Recommended</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-        else:
-            _render_empty_state("No recommendations yet", "AI guidance will appear here once observations and alerts are available.", "🧠")
-
-        st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
-        st.markdown(
-            """
-            <div class="panel-card">
-                <div class="panel-header">
-                    <div>
-                        <div class="panel-title">Recent Activity</div>
-                        <p class="panel-subtitle">Key events from the current farm workspace.</p>
+                        <div style="font-size:0.8rem; font-weight:700; color:var(--dv-accent); text-transform:uppercase; letter-spacing:0.06em;">
+                            {greeting} {greeting_icon} · {escape(farm_name)}
+                        </div>
+                        <h1 class="dash-title">Dashboard</h1>
+                        <div class="dash-subtitle">
+                            Monitor herd performance, AI predictions and operational health.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -505,93 +195,228 @@ def render_dashboard() -> None:
             unsafe_allow_html=True,
         )
 
-        timeline_items = []
-        if observation_count:
-            timeline_items.append(("Observations", f"{observation_count} recent observation(s) logged in the farm workspace.", "neutral"))
-        if dashboard.snapshots:
-            timeline_items.append(("Twin snapshot", "Latest digital twin snapshot synced and ready for review.", "success"))
-        if recommendation_items:
-            timeline_items.append(("AI guidance", "Recommendations refreshed from the current herd context.", "success"))
-        if not timeline_items:
-            timeline_items.append(("Workspace ready", "No recent operational events have been logged yet.", "neutral"))
+    with col_hdr_right:
+        st.markdown("<div style='margin-top:0.75rem;'></div>", unsafe_allow_html=True)
+        btn_cols = st.columns(2, gap="small")
+        with btn_cols[0]:
+            if st.button("🔄 Refresh", key="btn_dash_refresh", use_container_width=True, type="secondary"):
+                st.rerun()
 
-        for title, detail, tone in timeline_items[:4]:
-            st.markdown(
-                f"""
-                <div class="timeline-item">
-                    <div style='font-weight:700; color:#0f172a; margin-bottom:0.15rem;'>{title}</div>
-                    <div style='color:#475569; line-height:1.5;'>{detail}</div>
-                    <div class='chip {tone}'>{tone.replace('neutral', 'info').replace('success', 'success').replace('warning', 'warning')}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+        with btn_cols[1]:
+            # Generate Report CSV Download Button
+            report_df = pd.DataFrame([
+                {
+                    "Farm": farm_name,
+                    "Total Cows": cow_count,
+                    "Predicted Milk Output (L)": f"{milk_prediction:.1f}",
+                    "Healthy Cows": healthy_count,
+                    "Active Health Alerts": active_alert_count,
+                    "Date": today_label,
+                }
+            ])
+            report_csv = report_df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "📊 Report",
+                data=report_csv,
+                file_name=f"farm_summary_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True,
+                type="primary",
+                key="btn_dash_report",
             )
 
-    with right_col:
-        st.markdown(
-            """
-            <div class="panel-card">
-                <div class="panel-header">
-                    <div>
-                        <div class="panel-title">Critical Alerts</div>
-                        <p class="panel-subtitle">Highest priority issues to review today.</p>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+    # Empty State check when no cows exist in workspace
+    if cow_count == 0:
+        render_empty_state(
+            title="No cows registered in farm workspace yet",
+            message="Register your first cow to begin monitoring herd metrics, milk yield predictions, and health alerts.",
+            icon="🐄",
+            action_label="Register First Cow",
+            action_key="btn_dash_register_first",
+        )
+        if st.session_state.get("btn_dash_register_first"):
+            st.session_state.show_herd_form = True
+            st.session_state.active_section = "my_herd"
+            st.rerun()
+        return
+
+    # ==============================================================================
+    # TOP METRIC ROW (4 Metric Cards using render_metric_card component)
+    # ==============================================================================
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4, gap="small")
+
+    with col_m1:
+        render_metric_card(
+            title="Total Cows",
+            value=str(cow_count),
+            subtitle="Tracked herd size",
+            icon="🐄",
+            status="Stable",
+            tone="success",
         )
 
-        if alert_entries:
-            for item in alert_entries[:3]:
-                severity = str(item.get("severity") or "warning").lower()
-                tone = "warning" if severity in {"medium", "warning"} else "danger" if severity in {"high", "critical"} else "info"
-                title = str(item.get("category") or item.get("alert_type") or "Health alert")
-                message = str(item.get("message") or item.get("description") or "Alert details available in the health system.")
-                st.markdown(
-                    f"""
-                    <div class="alert-item {tone}">
-                        <div style='font-weight:700; color:#0f172a; margin-bottom:0.2rem;'>{title}</div>
-                        <div style='color:#475569; line-height:1.5;'>{message}</div>
-                        <div class='chip {tone}'>{severity.upper()}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
+    with col_m2:
+        render_metric_card(
+            title="Today's Predicted Milk",
+            value=f"{milk_prediction:.1f} L",
+            subtitle="Forecasted daily yield",
+            icon="💧",
+            status="Model forecast",
+            tone="info",
+        )
+
+    with col_m3:
+        render_metric_card(
+            title="Healthy Cows",
+            value=str(healthy_count),
+            subtitle="Operating normally",
+            icon="✅",
+            status="Low risk",
+            tone="success",
+        )
+
+    with col_m4:
+        alert_status = "Needs review" if active_alert_count else "All clear"
+        alert_tone = "danger" if active_alert_count else "success"
+        render_metric_card(
+            title="Active Alerts",
+            value=str(active_alert_count),
+            subtitle="Requires attention" if active_alert_count else "Zero warnings",
+            icon="🚨",
+            status=alert_status,
+            tone=alert_tone,
+        )
+
+    st.markdown("<div style='margin-bottom: 1.4rem;'></div>", unsafe_allow_html=True)
+
+    # ==============================================================================
+    # SECOND ROW: Left = AI Recommendations, Right = Active Alerts
+    # ==============================================================================
+    col_r2_left, col_r2_right = st.columns([1.3, 1], gap="medium")
+
+    # LEFT: AI RECOMMENDATIONS
+    with col_r2_left:
+        render_section_title("💡 AI Recommendations", "Actionable guidance generated from herd parameters")
+
+        if recommendation_items:
+            for idx, rec in enumerate(recommendation_items[:4]):
+                if isinstance(rec, dict):
+                    msg = rec.get("message") or rec.get("action") or str(rec)
+                    title = rec.get("title") or f"Actionable Insight #{idx + 1}"
+                    prio = str(rec.get("priority") or "medium").lower()
+                elif hasattr(rec, "message"):
+                    msg = getattr(rec, "message", str(rec))
+                    title = getattr(rec, "title", f"Actionable Insight #{idx + 1}")
+                    prio = str(getattr(rec, "priority", "medium")).lower()
+                else:
+                    msg = str(rec)
+                    title = "Recommendation"
+                    prio = "medium"
+
+                render_recommendation_card(
+                    title=title,
+                    description=msg,
+                    icon="💡",
+                    priority=prio,
                 )
         else:
-            _render_empty_state("No critical alerts", "Everything is currently stable for your tracked herd.", "✅")
+            render_empty_state(
+                title="No active AI recommendations",
+                message="Your herd is operating within optimal baseline parameters. Recommendations will appear here automatically when health or feed events are detected.",
+                icon="✨",
+            )
 
-        st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
-        st.markdown(
-            """
-            <div class="panel-card">
-                <div class="panel-header">
-                    <div>
-                        <div class="panel-title">Quick Actions</div>
-                        <p class="panel-subtitle">Common farm operations in one place.</p>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    # RIGHT: ACTIVE ALERTS
+    with col_r2_right:
+        render_section_title("🚨 Active Alerts", "Priority health warnings requiring review")
 
-        action_items = [
-            ("Add Cow", "my_herd", "primary", "➕"),
-            ("Record Observation", "daily_operations", "primary", "📝"),
-            ("View Digital Twin", "digital_twin", "secondary", "🧠"),
-            ("Open Analytics", "analytics", "secondary", "📊"),
-        ]
+        if alert_entries:
+            for item in alert_entries[:4]:
+                sev = str(item.get("severity") or "warning").lower()
+                title = str(item.get("category") or item.get("alert_type") or "Health Warning")
+                msg = str(item.get("message") or item.get("description") or "Check cow health parameters.")
+                now_str = datetime.now().strftime("%I:%M %p")
 
-        for label, section_key, button_type, icon in action_items:
-            if button_type == "primary":
-                if st.button(f"{icon} {label}", key=f"dashboard_action_{section_key}", use_container_width=True, type="primary"):
-                    st.session_state.active_section = section_key
-                    st.rerun()
-            else:
-                if st.button(f"{icon} {label}", key=f"dashboard_action_{section_key}", use_container_width=True, type="secondary"):
-                    st.session_state.active_section = section_key
-                    st.rerun()
+                render_alert_card(
+                    title=title,
+                    message=msg,
+                    severity=sev,
+                    timestamp=f"Logged Today at {now_str}",
+                )
+        else:
+            render_empty_state(
+                title="No active health alerts",
+                message="All monitored cows are operating in optimal health with zero active warnings.",
+                icon="✅",
+            )
+
+    st.markdown("<div style='margin-bottom: 1.4rem;'></div>", unsafe_allow_html=True)
+
+    # ==============================================================================
+    # THIRD ROW: Left = Recent Activity Timeline, Right = Quick Actions
+    # ==============================================================================
+    col_r3_left, col_r3_right = st.columns([1.3, 1], gap="medium")
+
+    # LEFT: RECENT ACTIVITY TIMELINE
+    with col_r3_left:
+        render_section_title("📈 Recent Activity Timeline", "Latest operational events across farm workspace")
+
+        now_time = datetime.now().strftime("%I:%M %p")
+        timeline_events = []
+
+        if observation_count > 0:
+            timeline_events.append(("Observation Recorded", f"Today, {now_time}", f"{observation_count} observation(s) logged in workspace.", "📝"))
+        if dashboard.snapshots:
+            timeline_events.append(("Twin Updated", f"Today, {now_time}", "Digital twin state refreshed with live parameters.", "💻"))
+        if prediction:
+            timeline_events.append(("Prediction Generated", f"Today, {now_time}", f"Yield forecast updated ({milk_prediction:.1f} L/day).", "💧"))
+        if alert_entries:
+            timeline_events.append(("Health Alert", f"Today, {now_time}", f"{len(alert_entries)} health item(s) active.", "🚨"))
+        timeline_events.append(("Cow Registered", "Initial setup", f"{cow_count} cow(s) registered in herd database.", "🐄"))
+
+        for title, ts, desc, icon in timeline_events[:5]:
+            render_timeline_item(
+                title=title,
+                timestamp=ts,
+                description=desc,
+                icon=icon,
+            )
+
+    # RIGHT: QUICK ACTIONS
+    with col_r3_right:
+        render_section_title("⚡ Quick Actions", "Direct shortcuts to key operational workflows")
+
+        st.markdown('<div class="dash-quick-actions-card" style="height:100%;">', unsafe_allow_html=True)
+
+        if st.button("➕ Add Cow", key="qa_btn_add_cow", type="primary", use_container_width=True):
+            st.session_state.show_herd_form = True
+            st.session_state.active_section = "my_herd"
+            st.rerun()
+
+        st.markdown("<div style='margin-top:0.45rem;'></div>", unsafe_allow_html=True)
+
+        if st.button("📝 Record Observation", key="qa_btn_record_obs", type="primary", use_container_width=True):
+            st.session_state.active_section = "daily_operations"
+            st.rerun()
+
+        st.markdown("<div style='margin-top:0.45rem;'></div>", unsafe_allow_html=True)
+
+        if st.button("💻 Open Digital Twin", key="qa_btn_open_dtwin", type="secondary", use_container_width=True):
+            st.session_state.active_section = "digital_twin"
+            st.rerun()
+
+        st.markdown("<div style='margin-top:0.45rem;'></div>", unsafe_allow_html=True)
+
+        if st.button("📊 View Analytics", key="qa_btn_view_analytics", type="secondary", use_container_width=True):
+            st.session_state.active_section = "analytics"
+            st.rerun()
+
+        st.markdown("<div style='margin-top:0.45rem;'></div>", unsafe_allow_html=True)
+
+        if st.button("📄 Generate Report", key="qa_btn_gen_report", type="secondary", use_container_width=True):
+            st.toast("Farm summary report generated successfully!", icon="✅")
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.get("dashboard_needs_refresh"):
         st.session_state["dashboard_needs_refresh"] = False

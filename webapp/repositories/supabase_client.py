@@ -42,6 +42,11 @@ class SupabaseClient:
     def is_configured(self) -> bool:
         return bool(self.url and self.key)
 
+    def reset_in_memory_store(self) -> None:
+        """Clear all in-memory mock tables and state (useful for test isolation)."""
+        self._tables.clear()
+        self._store.clear()
+
     @property
     def client(self) -> Any:
         if self._client is None:

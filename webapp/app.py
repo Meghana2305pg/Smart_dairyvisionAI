@@ -80,21 +80,31 @@ def _sync_query_params_from_session() -> None:
 
 
 def _restore_workspace_state() -> None:
-    """Restore the authenticated workspace from in-memory session state only."""
+    """Restore the authenticated workspace from in-memory session state or query parameters."""
     auth_service: AuthService = st.session_state.auth_service
 
     current_user = st.session_state.get("user") or auth_service.current_user()
+    user_id = st.session_state.get("user_id") or (current_user.get("id") if current_user else None) or st.query_params.get("user_id")
+    user_email = st.session_state.get("user_email") or (current_user.get("email") if current_user else None) or st.query_params.get("user_email")
+    user_name = st.session_state.get("user_name") or (current_user.get("full_name") if current_user else None) or st.query_params.get("user_name")
+    farm_id = st.session_state.get("farm_id") or st.query_params.get("farm_id")
+
+    if user_id:
+        st.session_state.user_id = user_id
+    if user_email:
+        st.session_state.user_email = user_email
+    if user_name:
+        st.session_state.user_name = user_name
+    if farm_id:
+        st.session_state.farm_id = farm_id
+
     if current_user:
         st.session_state.user = current_user
-        st.session_state.user_id = current_user.get("id") or st.session_state.get("user_id")
-        st.session_state.user_email = current_user.get("email") or st.session_state.get("user_email")
-        st.session_state.user_name = current_user.get("full_name") or st.session_state.get("user_name")
-
-    if st.session_state.get("user") is None and st.session_state.get("user_id"):
+    elif user_id:
         st.session_state.user = {
-            "id": st.session_state.get("user_id"),
-            "email": st.session_state.get("user_email", ""),
-            "full_name": st.session_state.get("user_name", ""),
+            "id": user_id,
+            "email": user_email or "",
+            "full_name": user_name or "",
         }
 
     if st.session_state.get("authenticated") and st.session_state.get("user") is None and st.session_state.get("user_id"):
@@ -107,7 +117,6 @@ def _restore_workspace_state() -> None:
         return
 
     farm = st.session_state.get("farm")
-    farm_id = st.session_state.get("farm_id")
     farm_name = st.session_state.get("farm_name")
     pending_farm_setup = bool(st.session_state.get("pending_farm_setup"))
 
@@ -481,8 +490,7 @@ def main() -> None:
         return
 
     # Main application with shell
-    section = st.session_state.get("active_section", "dashboard")
-    render_app_shell(lambda: render_screen(section))
+    render_app_shell(lambda: render_screen(st.session_state.get("active_section", "dashboard")))
 
 
 if __name__ == "__main__":

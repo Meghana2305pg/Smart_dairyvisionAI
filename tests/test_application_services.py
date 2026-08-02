@@ -12,6 +12,12 @@ from webapp.services.observation_service import ObservationService
 
 
 class ApplicationServiceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        SupabaseClient.from_env().reset_in_memory_store()
+
+    def tearDown(self) -> None:
+        SupabaseClient.from_env().reset_in_memory_store()
+
     def test_supabase_client_creates_from_environment(self) -> None:
         with patch.dict(os.environ, {"SUPABASE_URL": "https://demo.supabase.co", "SUPABASE_ANON_KEY": "demo-key"}, clear=False):
             client = SupabaseClient.from_env()
