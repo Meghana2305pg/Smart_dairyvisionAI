@@ -19,6 +19,11 @@ class FarmRepository:
     def get(self, farm_id: str) -> dict[str, Any] | None:
         return self.client.get("farms", farm_id)
 
+    def list_by_owner(self, owner_id: str) -> list[dict[str, Any]]:
+        response = self.client.client.table("farms").select("*").eq("owner_id", owner_id).execute()
+        data = getattr(response, "data", None)
+        return [item for item in data if isinstance(item, dict)] if isinstance(data, list) else []
+
     def update(self, farm_id: str, payload: dict[str, Any]) -> dict[str, Any]:
         return self.client.update("farms", farm_id, payload)
 

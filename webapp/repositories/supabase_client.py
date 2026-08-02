@@ -19,8 +19,6 @@ class SupabaseClient:
         self.url = url or os.getenv("SUPABASE_URL", "")
         self.key = key or os.getenv("SUPABASE_ANON_KEY", "")
         self._client = None
-        self._store: dict[str, Any] = {}
-        self._tables: dict[str, list[dict[str, Any]]] = {}
         if self.url and self.key:
             self._client = create_client(self.url, self.key)
 
@@ -48,35 +46,50 @@ class SupabaseClient:
             raise RuntimeError("Supabase client is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY.")
         return self._client
 
-    def get_table(self, table_name: str) -> list[dict[str, Any]]:
-        return self._tables.setdefault(table_name, [])
+    def _extract_record(self, response: Any) -> dict[str, Any] | None:
+        data = getattr(response, "data", None)
+        if isinstance(data, list):
+            if not data:
+                return None
+            record = data[0]
+            return record if isinstance(record, dict) else None
+        if isinstance(data, dict):
+            return data
+        return None
 
     def insert(self, table_name: str, payload: dict[str, Any]) -> dict[str, Any]:
-        table = self.get_table(table_name)
-        table.append(payload)
-        return payload
+        response = self.client.table(table_name).insert(payload).execute()
+        record = self._extract_record(response)
+        return record or payload
 
     def update(self, table_name: str, identifier: str, payload: dict[str, Any]) -> dict[str, Any]:
-        table = self.get_table(table_name)
-        for item in table:
-            if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
-                item.update(payload)
-                return item
+        query = self.client.table(table_name).update(payload)
+        for column in ("id", "farm_id", "cow_id"):
+            response = query.eq(column, identifier).execute()
+            record = self._extract_record(response)
+            if record is not None:
+                return record
         return payload
 
     def delete(self, table_name: str, identifier: str) -> bool:
-        table = self.get_table(table_name)
-        for index, item in enumerate(table):
-            if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
-                table.pop(index)
+        query = self.client.table(table_name).delete()
+        for column in ("id", "farm_id", "cow_id"):
+            response = query.eq(column, identifier).execute()
+            if getattr(response, "data", None) not in (None, []):
                 return True
         return False
 
     def list(self, table_name: str) -> list[dict[str, Any]]:
-        return list(self.get_table(table_name))
+        response = self.client.table(table_name).select("*").execute()
+        data = getattr(response, "data", None)
+        if isinstance(data, list):
+            return [item for item in data if isinstance(item, dict)]
+        return []
 
     def get(self, table_name: str, identifier: str) -> dict[str, Any] | None:
-        for item in self.list(table_name):
-            if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
-                return item
+        for column in ("id", "farm_id", "cow_id"):
+            response = self.client.table(table_name).select("*").eq(column, identifier).execute()
+            record = self._extract_record(response)
+            if record is not None:
+                return record
         return None

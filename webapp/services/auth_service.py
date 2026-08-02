@@ -39,6 +39,7 @@ class AuthService:
         self._current_user = {
             "id": response.user.id,
             "email": response.user.email,
+            "full_name": getattr(response.user, "user_metadata", {}).get("full_name") or "",
             "session": response.session.model_dump() if hasattr(response.session, "model_dump") else response.session,
         }
         return True
@@ -50,4 +51,33 @@ class AuthService:
             self._current_user = None
 
     def current_user(self) -> dict[str, Any] | None:
-        return self._current_user
+        if self._current_user is not None:
+            return self._current_user
+        return self.get_authenticated_user()
+
+    def get_authenticated_user(self) -> dict[str, Any] | None:
+        """Restore the active user from the provider-backed Supabase session."""
+        try:
+            if not self.client.is_configured:
+                return None
+
+            response = self.client.client.auth.get_user()
+            user = getattr(response, "user", None)
+            if user is None:
+                return None
+
+            user_metadata = getattr(user, "user_metadata", {}) or {}
+            full_name = user_metadata.get("full_name") or user_metadata.get("name") or getattr(user, "email", None) or ""
+            self._current_user = {
+                "id": getattr(user, "id", None),
+                "email": getattr(user, "email", None),
+                "full_name": full_name,
+                "profile": {
+                    "full_name": full_name,
+                    "phone": user_metadata.get("phone") or "",
+                },
+                "session": getattr(response, "session", None),
+            }
+            return self._current_user
+        except Exception:
+            return None

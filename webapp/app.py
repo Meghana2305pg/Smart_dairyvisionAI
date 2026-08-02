@@ -100,6 +100,33 @@ def resolve_app_state() -> str:
     return APP_STATE_AUTHENTICATED_WITH_FARM
 
 
+def restore_session_from_provider() -> None:
+    """Restore the authenticated user and farm from the provider session when possible."""
+    auth_service: AuthService | None = st.session_state.get("auth_service")
+    farm_service = st.session_state.get("farm_service")
+    if auth_service is None:
+        return
+
+    restored_user = auth_service.get_authenticated_user()
+    if restored_user is None:
+        return
+
+    st.session_state["authenticated"] = True
+    st.session_state["user"] = restored_user
+    st.session_state["active_view"] = st.session_state.get("active_view", "login")
+    st.session_state["active_section"] = st.session_state.get("active_section", "dashboard")
+
+    owner_id = restored_user.get("id") if isinstance(restored_user, dict) else None
+    if farm_service is not None and owner_id:
+        current_farm = farm_service.get_farm_for_owner(owner_id)
+        if current_farm is not None:
+            st.session_state["farm"] = current_farm
+            st.session_state["farm_twin"] = getattr(farm_service, "_current_farm_twin", None)
+        else:
+            st.session_state["farm"] = None
+            st.session_state["farm_twin"] = None
+
+
 def update_app_state() -> None:
     """Update the derived application state."""
     st.session_state["app_state"] = resolve_app_state()
@@ -153,6 +180,30 @@ def render_login_screen() -> None:
                     st.session_state.show_herd_form = False
                     st.session_state.active_section = "dashboard"
                     st.session_state.app_state = APP_STATE_AUTHENTICATED_NO_FARM
+                    print(
+                        "LOGIN-SUCCESS",
+                        {
+                            "authenticated": st.session_state.get("authenticated"),
+                            "current_user": st.session_state.get("user"),
+                            "current_farm": st.session_state.get("farm"),
+                            "active_section": st.session_state.get("active_section"),
+                            "active_view": st.session_state.get("active_view"),
+                            "app_state": st.session_state.get("app_state"),
+                            "session_keys": {
+                                key: st.session_state.get(key)
+                                for key in [
+                                    "authenticated",
+                                    "user",
+                                    "farm",
+                                    "farm_twin",
+                                    "cows",
+                                    "active_view",
+                                    "active_section",
+                                    "app_state",
+                                ]
+                            },
+                        },
+                    )
                     st.success("Signed in successfully")
                     st.rerun()
                 else:
@@ -254,8 +305,15 @@ def render_farm_setup_screen() -> None:
                 st.error("Farm name is required.")
             else:
                 service: FarmService = st.session_state.farm_service
+                user = st.session_state.get("user") or {}
                 farm_id = f"farm-{farm_name.lower().replace(' ', '-')}"
-                result = service.create_farm(farm_id=farm_id, name=farm_name, location=location, farm_size=farm_size)
+                result = service.create_farm(
+                    farm_id=farm_id,
+                    name=farm_name,
+                    location=location,
+                    farm_size=farm_size,
+                    owner_id=user.get("id"),
+                )
                 st.session_state.farm = result["farm"]
                 st.session_state.farm_twin = result["farm_twin"]
                 st.session_state.cows = []
@@ -286,7 +344,20 @@ def render_screen(section: str) -> None:
 def main() -> None:
     """Main application entry point."""
     initialize_app_state()
+    restore_session_from_provider()
     update_app_state()
+
+    print(
+        "MAIN-POST-UPDATE",
+        {
+            "authenticated": st.session_state.get("authenticated"),
+            "current_user": st.session_state.get("user"),
+            "current_farm": st.session_state.get("farm"),
+            "active_section": st.session_state.get("active_section"),
+            "active_view": st.session_state.get("active_view"),
+            "app_state": st.session_state.get("app_state"),
+        },
+    )
 
     app_state = st.session_state.get("app_state")
 
