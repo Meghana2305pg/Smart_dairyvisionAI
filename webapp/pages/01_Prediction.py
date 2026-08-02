@@ -122,7 +122,7 @@ if submitted:
 
     result_col1, result_col2 = st.columns([1.2, 0.8])
     with result_col1:
-        st.plotly_chart(gauge_fig, use_container_width=True)
+        st.plotly_chart(gauge_fig, use_container_width=True, key="prediction_gauge_chart")
     with result_col2:
         status_badge("Prediction ready", "success")
         warning_banner("The forecast is computed from live input values and refreshed with every run.")

@@ -99,7 +99,7 @@ if submitted:
             markers=True,
             line_shape="spline",
         )
-        fig.update_layout(height=320, margin=dict(l=20, r=20, t=20, b=10), legend_title_text="Scenario", paper_bgcolor="white", plot_bgcolor="#f8fafc")
-        st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(height=320, margin=dict(l=20, r=20, b=10), legend_title_text="Scenario", paper_bgcolor="white", plot_bgcolor="#f8fafc")
+        st.plotly_chart(fig, use_container_width=True, key="digital_twin_scenario_chart")
 
     recommendation_panel("AI recommendations", "Increase feed modestly during hotter conditions to protect yield stability.", improvement="+1.2 L/day")

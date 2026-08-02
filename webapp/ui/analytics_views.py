@@ -34,7 +34,7 @@ def render_analytics() -> None:
         pred_data = pd.DataFrame([{"Cow ID": p.get("cow_id", "Unknown"), "Milk Yield (L/day)": float(p.get("prediction", 0))} for p in predictions])
         fig = px.bar(pred_data, x="Cow ID", y="Milk Yield (L/day)", title="Predicted Milk Yield by Cow")
         fig.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20), paper_bgcolor="white", plot_bgcolor="#f8fafc")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="analytics_milk_prediction_chart")
     else:
         st.info("No prediction data available yet.")
 
@@ -50,7 +50,7 @@ def render_analytics() -> None:
         df = pd.DataFrame(list(health_summary.items()), columns=["Category", "Count"])
         fig = px.pie(df, values="Count", names="Category", title="Health Status Distribution")
         fig.update_layout(height=300, margin=dict(l=20, r=20, t=40, b=20), paper_bgcolor="white")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="analytics_health_distribution_chart")
     else:
         st.info("No health data available yet.")
 

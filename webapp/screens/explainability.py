@@ -192,7 +192,7 @@ def render_explainability() -> None:
         st.markdown('<div class="panel-card">', unsafe_allow_html=True)
         st.markdown('<div class="panel-title">Feature Importance</div>', unsafe_allow_html=True)
         st.caption("This chart shows which features are contributing most to the current prediction output.")
-        st.plotly_chart(build_shap_bar_chart(explanation), use_container_width=True)
+        st.plotly_chart(build_shap_bar_chart(explanation), use_container_width=True, key="feature_importance_chart")
         st.markdown('</div>', unsafe_allow_html=True)
     with right_col:
         st.markdown('<div class="panel-card">', unsafe_allow_html=True)
@@ -237,7 +237,7 @@ def render_explainability() -> None:
     st.markdown('<div class="panel-card">', unsafe_allow_html=True)
     st.markdown('<div class="panel-title">Contribution Timeline</div>', unsafe_allow_html=True)
     st.caption("This timeline shows how the strongest feature contributions evolve over the available explainability output.")
-    st.plotly_chart(build_contribution_timeline(context["feature_table"]), use_container_width=True)
+    st.plotly_chart(build_contribution_timeline(context["feature_table"]), use_container_width=True, key="contribution_timeline_chart")
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)

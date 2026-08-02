@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from html import escape
 from typing import Any
 
 import pandas as pd
@@ -472,17 +473,17 @@ def render_herd() -> None:
         with st.container():
             cols = st.columns([1.1, 1, 1, 0.65, 1, 1.2, 0.85], gap="small")
             with cols[0]:
-                st.markdown(f"<div class='herd-cell-id'>🐄 {cow_id}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='herd-cell-id'>🐄 {escape(cow_id)}</div>", unsafe_allow_html=True)
             with cols[1]:
-                st.markdown(f"<div class='herd-cell-txt'>{name}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='herd-cell-txt'>{escape(name)}</div>", unsafe_allow_html=True)
             with cols[2]:
-                st.markdown(f"<div class='herd-cell-txt'>{breed}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='herd-cell-txt'>{escape(breed)}</div>", unsafe_allow_html=True)
             with cols[3]:
-                st.markdown(f"<div class='herd-cell-txt'>{age_text}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='herd-cell-txt'>{escape(age_text)}</div>", unsafe_allow_html=True)
             with cols[4]:
-                st.markdown(f"<span class='status-badge {status_tone}'>{badge_label}</span>", unsafe_allow_html=True)
+                st.markdown(f"<span class='status-badge {status_tone}'>{escape(badge_label)}</span>", unsafe_allow_html=True)
             with cols[5]:
-                st.markdown(f"<div class='herd-cell-txt'>{last_observation}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='herd-cell-txt'>{escape(last_observation)}</div>", unsafe_allow_html=True)
             with cols[6]:
                 with st.popover("Actions"):
                     if st.button("👤 View Profile", key=f"act_prof_{cow_id}", use_container_width=True):

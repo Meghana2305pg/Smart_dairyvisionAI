@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from html import escape
+
 import streamlit as st
 
 from webapp.components.cards import info_card
@@ -211,9 +213,9 @@ def render_command_centre() -> None:
                 st.markdown(
                     f"""
                     <div class="ops-card">
-                        <strong>{item.get('name', 'Cow')}</strong><br>
-                        Cow ID: {item.get('cow_id', 'Unknown')}<br>
-                        Status: {item.get('status', 'stable')}
+                        <strong>{escape(str(item.get('name', 'Cow')))}</strong><br>
+                        Cow ID: {escape(str(item.get('cow_id', 'Unknown')))}<br>
+                        Status: {escape(str(item.get('status', 'stable')))}
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -260,8 +262,8 @@ def render_command_centre() -> None:
                 st.markdown(
                     f"""
                     <div class="ops-card">
-                        <strong>{item.get('priority', 'Low')}</strong><br>
-                        {item.get('message', 'Maintain monitoring for current conditions.')}
+                        <strong>{escape(str(item.get('priority', 'Low')))}</strong><br>
+                        {escape(str(item.get('message', 'Maintain monitoring for current conditions.')))}
                     </div>
                     """,
                     unsafe_allow_html=True,

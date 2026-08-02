@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 from typing import Any
 
 import pandas as pd
@@ -271,7 +272,7 @@ def render_health() -> None:
             st.markdown(f'<div class="severity-pill {severity_class}">{alert["severity"]}</div>', unsafe_allow_html=True)
 
         st.markdown(f'<div class="health-alert-meta">Alert Type: {alert["alert_type"]} • {alert["timestamp"].strftime("%Y-%m-%d %H:%M")}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="health-alert-desc">{alert["description"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="health-alert-desc">{escape(str(alert["description"]))}</div>', unsafe_allow_html=True)
 
         action_cols = st.columns([1, 1, 1, 1.1], gap="small")
         with action_cols[0]:

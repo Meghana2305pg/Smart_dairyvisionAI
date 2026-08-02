@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 
 from .snapshot import TwinSnapshot
@@ -13,7 +14,9 @@ class InMemorySnapshotStore:
     """A small repository that stores immutable snapshots in memory.
 
     The implementation is intentionally simple so future persistence backends can
-    replace it without changing the domain or AI layers.
+    replace it without changing the domain or AI layers. The class preserves
+    the legacy methods and adds richer accessors for the Phase 7.1 snapshot
+    engine.
     """
 
     _snapshots: dict[str, TwinSnapshot] = field(default_factory=dict)
@@ -42,6 +45,29 @@ class InMemorySnapshotStore:
     def list_snapshot_history(self, cow_id: str) -> list[TwinSnapshot]:
         """Return the full ordered history for a cow."""
         return list(self._history.get(cow_id, []))
+
+    def get_latest(self, cow_id: str) -> TwinSnapshot | None:
+        """Return the latest snapshot for a cow using the Phase 7.1 accessor."""
+        return self.get_latest_snapshot(cow_id)
+
+    def get_snapshot(self, snapshot_id: str) -> TwinSnapshot | None:
+        """Return a snapshot by identifier using the new Phase 7.1 accessor."""
+        return self.load_snapshot(snapshot_id)
+
+    def get_history(self, cow_id: str) -> list[TwinSnapshot]:
+        """Return the ordered history for a cow using the new accessor."""
+        return self.list_snapshot_history(cow_id)
+
+    def get_range(self, cow_id: str, start_time: datetime, end_time: datetime) -> list[TwinSnapshot]:
+        """Return snapshots for a cow within the supplied inclusive time range."""
+        history = self._history.get(cow_id, [])
+        if not history:
+            return []
+        return [item for item in history if start_time <= item.timestamp <= end_time]
+
+    def count(self) -> int:
+        """Return the number of stored snapshots."""
+        return len(self._snapshots)
 
     def delete_snapshot(self, snapshot_id: str) -> None:
         """Delete a snapshot by identifier from the store."""

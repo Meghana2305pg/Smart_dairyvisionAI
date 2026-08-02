@@ -90,7 +90,7 @@ if submitted:
             color_continuous_scale="Greens",
         )
         fig.update_layout(height=320, margin=dict(l=20, r=20, t=20, b=10), paper_bgcolor="white", plot_bgcolor="#f8fafc")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="explainability_contribution_chart")
 
     st.dataframe(
         [{"feature": item["feature"], "contribution": round(item["contribution"], 4)} for item in contributions],

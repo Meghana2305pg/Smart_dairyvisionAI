@@ -17,10 +17,14 @@ from webapp.services.dashboard_service import DashboardService
 from webapp.ui.design_system import (
     render_alert_card,
     render_empty_state,
-    render_metric_card,
     render_recommendation_card,
-    render_section_title,
     render_timeline_item,
+)
+from webapp.ui.polaris_dashboard import (
+    render_dashboard_panel,
+    render_polaris_bar_chart,
+    render_polaris_metric_card,
+    render_polaris_weather_card,
 )
 
 
@@ -176,23 +180,11 @@ def render_dashboard() -> None:
     # ==============================================================================
     col_hdr_left, col_hdr_right = st.columns([3, 1.2], gap="small")
     with col_hdr_left:
-        st.markdown(
-            f"""
-            <div class="dash-page-header">
-                <div class="dash-page-header-row">
-                    <div>
-                        <div style="font-size:0.8rem; font-weight:700; color:var(--dv-accent); text-transform:uppercase; letter-spacing:0.06em;">
-                            {greeting} {greeting_icon} · {escape(farm_name)}
-                        </div>
-                        <h1 class="dash-title">Dashboard</h1>
-                        <div class="dash-subtitle">
-                            Monitor herd performance, AI predictions and operational health.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        render_dashboard_panel(
+            title="Executive Dashboard",
+            subtitle=f"{greeting} {greeting_icon} · {escape(farm_name)} · {today_label}",
+            icon="🏡",
+            badge="LIVE",
         )
 
     with col_hdr_right:
@@ -246,45 +238,67 @@ def render_dashboard() -> None:
     col_m1, col_m2, col_m3, col_m4 = st.columns(4, gap="small")
 
     with col_m1:
-        render_metric_card(
+        render_polaris_metric_card(
             title="Total Cows",
             value=str(cow_count),
             subtitle="Tracked herd size",
             icon="🐄",
-            status="Stable",
             tone="success",
         )
 
     with col_m2:
-        render_metric_card(
+        render_polaris_metric_card(
             title="Today's Predicted Milk",
             value=f"{milk_prediction:.1f} L",
             subtitle="Forecasted daily yield",
             icon="💧",
-            status="Model forecast",
             tone="info",
         )
 
     with col_m3:
-        render_metric_card(
+        render_polaris_metric_card(
             title="Healthy Cows",
             value=str(healthy_count),
             subtitle="Operating normally",
             icon="✅",
-            status="Low risk",
             tone="success",
         )
 
     with col_m4:
-        alert_status = "Needs review" if active_alert_count else "All clear"
         alert_tone = "danger" if active_alert_count else "success"
-        render_metric_card(
+        render_polaris_metric_card(
             title="Active Alerts",
             value=str(active_alert_count),
             subtitle="Requires attention" if active_alert_count else "Zero warnings",
             icon="🚨",
-            status=alert_status,
             tone=alert_tone,
+        )
+
+    st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
+    render_dashboard_panel(
+        title="Operations snapshot",
+        subtitle="Environmental conditions and herd balance at a glance",
+        icon="📈",
+        badge="NOW",
+    )
+
+    col_ops_left, col_ops_right = st.columns([1.05, 1], gap="medium")
+    with col_ops_left:
+        condition_label = "Stable" if not active_alert_count else "Watch"
+        risk_label = "Low pressure" if not active_alert_count else "Elevated attention"
+        render_polaris_weather_card(base_temp, base_hum, condition=condition_label, risk=risk_label)
+
+    with col_ops_right:
+        render_polaris_bar_chart(
+            "Herd balance",
+            "Healthy cows, alerts, and recommendations in view",
+            [
+                {"label": "Healthy", "value": max(healthy_count, 0)},
+                {"label": "Alerts", "value": max(active_alert_count, 0)},
+                {"label": "Recs", "value": max(len(recommendation_items), 0)},
+                {"label": "Cows", "value": max(cow_count, 0)},
+            ],
+            accent="#2563eb",
         )
 
     st.markdown("<div style='margin-bottom: 1.4rem;'></div>", unsafe_allow_html=True)
@@ -296,7 +310,12 @@ def render_dashboard() -> None:
 
     # LEFT: AI RECOMMENDATIONS
     with col_r2_left:
-        render_section_title("💡 AI Recommendations", "Actionable guidance generated from herd parameters")
+        render_dashboard_panel(
+            title="AI Recommendations",
+            subtitle="Actionable guidance generated from herd parameters",
+            icon="💡",
+            badge="SMART",
+        )
 
         if recommendation_items:
             for idx, rec in enumerate(recommendation_items[:4]):
@@ -328,7 +347,12 @@ def render_dashboard() -> None:
 
     # RIGHT: ACTIVE ALERTS
     with col_r2_right:
-        render_section_title("🚨 Active Alerts", "Priority health warnings requiring review")
+        render_dashboard_panel(
+            title="Active Alerts",
+            subtitle="Priority health warnings requiring review",
+            icon="🚨",
+            badge="PRIORITY",
+        )
 
         if alert_entries:
             for item in alert_entries[:4]:
@@ -359,7 +383,12 @@ def render_dashboard() -> None:
 
     # LEFT: RECENT ACTIVITY TIMELINE
     with col_r3_left:
-        render_section_title("📈 Recent Activity Timeline", "Latest operational events across farm workspace")
+        render_dashboard_panel(
+            title="Recent Activity Timeline",
+            subtitle="Latest operational events across farm workspace",
+            icon="📈",
+            badge="FLOW",
+        )
 
         now_time = datetime.now().strftime("%I:%M %p")
         timeline_events = []
@@ -384,7 +413,12 @@ def render_dashboard() -> None:
 
     # RIGHT: QUICK ACTIONS
     with col_r3_right:
-        render_section_title("⚡ Quick Actions", "Direct shortcuts to key operational workflows")
+        render_dashboard_panel(
+            title="Quick Actions",
+            subtitle="Direct shortcuts to key operational workflows",
+            icon="⚡",
+            badge="ONE-CLICK",
+        )
 
         st.markdown('<div class="dash-quick-actions-card" style="height:100%;">', unsafe_allow_html=True)
 

@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from webapp.backend_services.weather_service import get_current_weather
+from webapp.digital_twin.decision_support import Recommendation
 from webapp.screens.analytics_cards import render_summary_cards
 from webapp.screens.charts import (
     build_health_trend_chart,
@@ -34,6 +35,24 @@ def _normalise_cow_records(cow_records: list[dict[str, Any]] | None) -> list[dic
             payload = dict(item)
         normalised.append(payload)
     return normalised
+
+
+def _coerce_recommendation_message(recommendation: Any) -> str:
+    """Extract a recommendation message from either a dict-like payload or a Recommendation object."""
+    if recommendation is None:
+        return ""
+    if isinstance(recommendation, Recommendation):
+        return recommendation.message or ""
+    if isinstance(recommendation, dict):
+        for key in ("message", "recommendation", "description"):
+            value = recommendation.get(key)
+            if value:
+                return str(value)
+        return ""
+    if hasattr(recommendation, "message"):
+        value = getattr(recommendation, "message")
+        return str(value) if value else ""
+    return str(recommendation)
 
 
 def build_analytics_context(
@@ -127,10 +146,10 @@ def build_analytics_context(
 
     insights: list[dict[str, Any]] = []
     if recommendation_list:
-        first_recommendation = recommendation_list[0]
+        first_recommendation_message = _coerce_recommendation_message(recommendation_list[0])
         insights.append({
             "title": "AI Insight",
-            "description": str(first_recommendation.get("message") or first_recommendation.get("recommendation") or "Review the latest observations to improve herd performance."),
+            "description": str(first_recommendation_message or "Review the latest observations to improve herd performance."),
         })
     if current_weather[0] > 30:
         insights.append({
@@ -252,24 +271,40 @@ def render_analytics() -> None:
     chart_col1, chart_col2 = st.columns(2, gap="medium")
     with chart_col1:
         st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
-        st.plotly_chart(build_milk_production_chart(context["chart_observations"]), use_container_width=True)
+        st.plotly_chart(
+            build_milk_production_chart(context["chart_observations"]),
+            use_container_width=True,
+            key="milk_production_chart",
+        )
         st.caption("Monthly trend in milk output helps identify performance swings and production opportunities.")
         st.markdown('</div>', unsafe_allow_html=True)
     with chart_col2:
         st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
-        st.plotly_chart(build_health_trend_chart(context["chart_observations"]), use_container_width=True)
+        st.plotly_chart(
+            build_health_trend_chart(context["chart_observations"]),
+            use_container_width=True,
+            key="health_trend_chart",
+        )
         st.caption("Health signals provide a quick view of herd condition and change over time.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     chart_col3, chart_col4 = st.columns(2, gap="medium")
     with chart_col3:
         st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
-        st.plotly_chart(build_weather_vs_milk_chart(context["chart_observations"]), use_container_width=True)
+        st.plotly_chart(
+            build_weather_vs_milk_chart(context["chart_observations"]),
+            use_container_width=True,
+            key="weather_vs_milk_chart",
+        )
         st.caption("Temperature and humidity are compared with milk output to understand environmental influence.")
         st.markdown('</div>', unsafe_allow_html=True)
     with chart_col4:
         st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
-        st.plotly_chart(build_prediction_history_chart(context["history"]), use_container_width=True)
+        st.plotly_chart(
+            build_prediction_history_chart(context["history"]),
+            use_container_width=True,
+            key="prediction_history_chart",
+        )
         st.caption("Prediction history supports confidence checks and short-interval monitoring decisions.")
         st.markdown('</div>', unsafe_allow_html=True)
 

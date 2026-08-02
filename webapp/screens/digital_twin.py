@@ -2,17 +2,27 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 from typing import Any
 
 import pandas as pd
 import streamlit as st
 
 from webapp.backend_services.weather_service import get_current_weather
-from webapp.components.cards import info_card, recommendation_card
 from webapp.digital_twin.cow_twin import CowTwin
 from webapp.digital_twin.observation import Observation
 from webapp.services.cow_service import CowService
-from webapp.ui.section_header import render_page_header, render_section_header
+from webapp.ui.digital_twin_ui import (
+    render_ai_decision_center,
+    render_digital_twin_hero,
+    render_horizontal_timeline,
+    render_kpi_row,
+    render_playback_controls,
+    render_scenario_studio_card,
+    render_snapshot_cards,
+    render_status_panel,
+    render_trend_chart_card,
+)
 
 
 def _normalize_observation(observation: Any) -> dict[str, Any]:
@@ -189,114 +199,34 @@ def render_digital_twin() -> None:
         memory_snapshots=memory_payload,
     )
 
+    weather_payload = dashboard.get('weather') or {}
+
     st.markdown(
         """
         <style>
-        .twin-shell { padding-top: 0.3rem; }
-        .twin-header {
-            margin-bottom: 1rem;
-        }
-        .twin-title {
-            font-size: clamp(1.9rem, 2vw, 2.6rem);
-            font-weight: 800;
-            letter-spacing: -0.06em;
-            margin: 0;
-            color: #0f172a;
-        }
-        .twin-subtitle {
-            color: #64748b;
-            font-size: 0.96rem;
-            margin-top: 0.25rem;
-        }
-        .twin-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 0.8rem;
-            margin-bottom: 1rem;
-        }
-        .twin-card {
-            background: rgba(255,255,255,0.96);
-            border: 1px solid rgba(148,163,184,0.16);
-            border-radius: 18px;
-            padding: 1rem 1rem 0.9rem;
-            min-height: 128px;
-            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
-        }
-        .twin-card .label {
-            color: #64748b;
-            font-size: 0.72rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            font-weight: 800;
-        }
-        .twin-card .value {
-            font-size: clamp(1.2rem, 1.6vw, 1.8rem);
-            font-weight: 800;
-            letter-spacing: -0.05em;
-            color: #0f172a;
-            margin: 0.5rem 0 0.2rem;
-        }
-        .twin-card .meta {
-            font-size: 0.8rem;
-            color: #475569;
-        }
-        .twin-panel {
-            background: rgba(255,255,255,0.96);
-            border: 1px solid rgba(148,163,184,0.16);
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-        .twin-panel-title {
-            font-size: 0.72rem;
-            letter-spacing: 0.08em;
-            font-weight: 800;
-            color: #475569;
-            text-transform: uppercase;
-            margin-bottom: 0.8rem;
-        }
-        .twin-recommendation {
-            background: linear-gradient(180deg, rgba(255,255,255,1), rgba(248,250,252,0.98));
-            border: 1px solid rgba(148,163,184,0.14);
-            border-radius: 14px;
-            padding: 0.9rem;
-            margin-bottom: 0.8rem;
-        }
-        .twin-pill {
-            display: inline-flex;
-            align-items: center;
-            border-radius: 999px;
-            padding: 0.34rem 0.64rem;
-            font-size: 0.7rem;
-            font-weight: 800;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-        .twin-pill.success { background: rgba(21,128,61,0.12); color: #15803d; }
-        .twin-pill.warning { background: rgba(245,158,11,0.12); color: #b45309; }
-        .twin-pill.danger { background: rgba(239,68,68,0.10); color: #b91c1c; }
-        .twin-pill.neutral { background: rgba(148,163,184,0.12); color: #475569; }
-        @media (max-width: 1100px) { .twin-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 620px) { .twin-summary-grid { grid-template-columns: 1fr; } }
+        .twin-shell { padding-top: 0.2rem; }
+        .twin-section-stack { display: grid; gap: 0.9rem; }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
     st.markdown('<div class="twin-shell">', unsafe_allow_html=True)
-    st.markdown(
-        f"""
-        <div class="twin-header">
-            <h1 class="twin-title">{dashboard['cow_name']} · Digital Twin</h1>
-            <div class="twin-subtitle">Live status, recent behavior, predictive insights, and AI-guided recommendations.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
     if not twin.latest_observation and not observations:
         st.info("No observations are available yet for this cow. Record one from Daily Operations to populate the twin workspace.", icon="ℹ️")
+
+    weather_label = f"Weather {weather_payload.get('temperature', 'n/a')}°C / {weather_payload.get('humidity', 'n/a')}%"
+    render_digital_twin_hero(
+        cow_name=dashboard['cow_name'],
+        breed=str(cow_record.get("breed") or "Holstein"),
+        age=f"{cow_record.get('age_months', 'n/a')} months",
+        farm=str(cow_record.get("farm_name") or cow_record.get("farm") or "Farm Workspace"),
+        twin_status=dashboard['twin_state'].capitalize(),
+        last_updated=str(dashboard.get('last_updated') or datetime.now().strftime('%Y-%m-%d %H:%M')),
+        weather=weather_label,
+        weather_tone="info",
+    )
 
     refresh_col1, refresh_col2 = st.columns([1, 3], gap="small")
     with refresh_col1:
@@ -307,99 +237,73 @@ def render_digital_twin() -> None:
     with refresh_col2:
         st.info("This refresh keeps the same backend logic and only reloads the current twin state.", icon="ℹ️")
 
-    st.markdown('<div class="twin-summary-grid">', unsafe_allow_html=True)
-    status_key = str((dashboard['health_status'] or {}).get('alert_category', 'Healthy')).lower()
+    health_status = dashboard['health_status'] or {}
+    status_key = str(health_status.get('alert_category', 'Healthy')).lower()
     if "critical" in status_key or "risk" in status_key or "severe" in status_key:
-        badge_class = "danger"
-        badge_text = "Critical"
+        health_tone = "danger"
+        health_label = "Critical"
     elif "warning" in status_key or "medium" in status_key or "high" in status_key:
-        badge_class = "warning"
-        badge_text = "Warning"
+        health_tone = "warning"
+        health_label = "Warning"
     elif "healthy" in status_key or "low" in status_key or "normal" in status_key:
-        badge_class = "success"
-        badge_text = "Healthy"
+        health_tone = "success"
+        health_label = "Healthy"
     else:
-        badge_class = "neutral"
-        badge_text = "Stable"
+        health_tone = "neutral"
+        health_label = "Stable"
 
-    summary_cards = [
-        ("Twin Status", dashboard['twin_state'].capitalize(), "Current twin state"),
-        ("Current Health", badge_text, "Health classification"),
-        ("Milk Yield", f"{(dashboard['latest_prediction'] or {}).get('prediction', 'n/a')} L/day", "Latest prediction"),
-        ("Feed Status", f"{(dashboard['latest_observation'] or {}).get('feed', 'n/a')} kg/day", "Most recent feed intake"),
-        ("Environment", f"{dashboard['thi']:.1f} THI", "Thermal humidity index"),
-    ]
-    for label, value, meta in summary_cards:
-        st.markdown(
-            f"""
-            <div class="twin-card">
-                <div class="label">{label}</div>
-                <div class="value">{value}</div>
-                <div class="meta">{meta}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    st.markdown('</div>', unsafe_allow_html=True)
+    prediction_value = (dashboard['latest_prediction'] or {}).get('prediction', 'n/a')
+    latest_observation = dashboard['latest_observation'] or {}
+    weather_payload = dashboard.get('weather') or {}
+    observed_temp = latest_observation.get('temperature', weather_payload.get('temperature', 'n/a'))
+    observed_humidity = latest_observation.get('humidity', weather_payload.get('humidity', 'n/a'))
+    observed_weight = latest_observation.get('weight', 'n/a')
+    observed_feed = latest_observation.get('feed', 'n/a')
 
-    left_col, right_col = st.columns([1.15, 0.85], gap="medium")
+    render_kpi_row([
+        {"title": "Health Score", "value": health_label, "subtitle": f"{health_status.get('stress_category', 'Stable')} · {health_status.get('severity', 'Low')}", "tone": health_tone, "icon": "🩺"},
+        {"title": "Twin Score", "value": dashboard['twin_state'].capitalize(), "subtitle": "Current twin coherence", "tone": "info", "icon": "🧠"},
+        {"title": "Milk Prediction", "value": f"{prediction_value} L/day" if prediction_value != 'n/a' else 'n/a', "subtitle": "Latest forecast", "tone": "success", "icon": "💧"},
+        {"title": "Heat Risk", "value": f"{dashboard['thi']:.1f} THI", "subtitle": "Thermal humidity index", "tone": "warning", "icon": "🌡️"},
+        {"title": "Prediction Confidence", "value": f"{health_status.get('confidence', 'High')}", "subtitle": "AI confidence signal", "tone": "neutral", "icon": "🎯"},
+    ])
 
-    with left_col:
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">Current State</div>', unsafe_allow_html=True)
-        if dashboard["latest_observation"]:
-            st.write(f"Latest observation: {dashboard['latest_observation']['notes']}")
-            st.write(f"Temperature: {dashboard['latest_observation']['temperature']} °C")
-            st.write(f"Humidity: {dashboard['latest_observation']['humidity']} %")
-            st.write(f"Weight: {dashboard['latest_observation']['weight']} kg")
-        else:
-            st.write("No latest observation is available yet.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    render_status_panel(
+        "Current Twin Status",
+        [
+            ("Temperature", f"{observed_temp} °C", "Live thermal reading", "🌡️"),
+            ("Humidity", f"{observed_humidity} %", "Ambient moisture", "💧"),
+            ("THI", f"{dashboard['thi']:.1f}", "Heat stress index", "📊"),
+            ("Weight", f"{observed_weight} kg", "Body mass trend", "⚖️"),
+            ("Feed Intake", f"{observed_feed} kg/day", "Daily nutrition", "🥣"),
+            ("Weather", f"{weather_payload.get('temperature', 'n/a')}°C / {weather_payload.get('humidity', 'n/a')}%", "External environment", "🌤️"),
+        ],
+    )
 
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">Prediction Summary</div>', unsafe_allow_html=True)
-        prediction_value = (dashboard['latest_prediction'] or {}).get('prediction', 'n/a')
-        st.metric("Predicted Milk Yield", f"{prediction_value} L/day" if prediction_value != 'n/a' else 'n/a')
-        st.markdown('</div>', unsafe_allow_html=True)
+    render_horizontal_timeline(dashboard['timeline'])
+    render_snapshot_cards(dashboard['timeline'])
+    render_ai_decision_center(dashboard['recommendations'])
 
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">Recent Behaviour</div>', unsafe_allow_html=True)
-        if dashboard['timeline']:
-            for item in reversed(dashboard['timeline'][-3:]):
-                st.write(f"- {item['timestamp']} • {item['notes']}")
-        else:
-            st.write("No recent behavior data has been recorded yet.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    trend_df = pd.DataFrame(
+        [
+            {"step": "Start", "value": float(latest_observation.get('weight') or 0)},
+            {"step": "Now", "value": float(latest_observation.get('weight') or 0)},
+        ]
+    )
+    trend_df = trend_df if not trend_df.empty else pd.DataFrame(columns=["step", "value"])
+    col_trend_left, col_trend_center, col_trend_right = st.columns(3, gap="small")
+    with col_trend_left:
+        render_trend_chart_card("Milk Trend", trend_df, "step", "value", empty_message="More milk observations will populate this trend view over time.")
+    with col_trend_center:
+        render_trend_chart_card("Health Trend", pd.DataFrame(columns=["step", "value"]), "step", "value", empty_message="Health signals will appear here as observations are added.")
+    with col_trend_right:
+        render_trend_chart_card("THI Trend", pd.DataFrame(columns=["step", "value"]), "step", "value", empty_message="Environmental history will be displayed once more data is available.")
 
-    with right_col:
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">AI Insights</div>', unsafe_allow_html=True)
-        if dashboard['health_status']:
-            st.write(f"Alert category: {dashboard['health_status'].get('alert_category', 'Healthy')}")
-            st.write(f"Severity: {dashboard['health_status'].get('severity', 'Low')}")
-            st.write(f"Stress category: {dashboard['health_status'].get('stress_category', 'Normal')}")
-        else:
-            st.write("No AI health insight is available yet.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    render_playback_controls()
 
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">Recommendations</div>', unsafe_allow_html=True)
-        if dashboard['recommendations']:
-            for item in dashboard['recommendations'][:4]:
-                st.markdown(
-                    f"""
-                    <div class="twin-recommendation">
-                        <div class="twin-pill {badge_class}">{badge_text}</div>
-                        <div style="margin-top: 0.55rem; color: #334155;">{item.get('message', 'No guidance available')}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.write("No recommendations have been generated yet.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="twin-panel"><div class="twin-panel-title">Timeline</div>', unsafe_allow_html=True)
-    if dashboard['timeline']:
-        for item in reversed(dashboard['timeline'][:6]):
-            st.write(f"- {item['timestamp']} • {item['notes']}")
-    else:
-        st.write("No twin timeline entries are available yet.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    render_scenario_studio_card()
+    if st.button("Launch Scenario Studio", use_container_width=True, type="primary"):
+        st.session_state.active_section = "scenario_studio"
+        st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)

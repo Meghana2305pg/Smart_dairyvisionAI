@@ -1,6 +1,7 @@
 """Settings screen."""
 from __future__ import annotations
 
+from html import escape
 import streamlit as st
 
 from webapp.components.cards import info_card
@@ -35,9 +36,9 @@ def render_settings() -> None:
         f"""
         <div class="settings-panel">
             <div class="settings-title">Farm Information</div>
-            <div style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.04em; color: #0f172a;'>{farm_name}</div>
-            <div style='margin-top: 0.8rem; color: #475569;'>Location: {farm.get('location', 'Not set')}</div>
-            <div style='margin-top: 0.3rem; color: #475569;'>Farm ID: {farm.get('farm_id', 'Not set')}</div>
+            <div style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.04em; color: #0f172a;'>{escape(farm_name)}</div>
+            <div style='margin-top: 0.8rem; color: #475569;'>Location: {escape(str(farm.get('location', 'Not set')))}</div>
+            <div style='margin-top: 0.3rem; color: #475569;'>Farm ID: {escape(str(farm.get('farm_id', 'Not set')))}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -46,9 +47,9 @@ def render_settings() -> None:
         f"""
         <div class="settings-panel">
             <div class="settings-title">User Profile</div>
-            <div style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.04em; color: #0f172a;'>{user.get('full_name', 'Current user')}</div>
-            <div style='margin-top: 0.8rem; color: #475569;'>Email: {user.get('email', 'Not set')}</div>
-            <div style='margin-top: 0.3rem; color: #475569;'>Phone: {user.get('phone', 'Not set')}</div>
+            <div style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.04em; color: #0f172a;'>{escape(str(user.get('full_name', 'Current user')))}</div>
+            <div style='margin-top: 0.8rem; color: #475569;'>Email: {escape(str(user.get('email', 'Not set')))}</div>
+            <div style='margin-top: 0.3rem; color: #475569;'>Phone: {escape(str(user.get('phone', 'Not set')))}</div>
         </div>
         """,
         unsafe_allow_html=True,

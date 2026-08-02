@@ -95,20 +95,32 @@ if submitted:
     cow_col1, cow_col2, cow_col3 = st.columns([1.1, 1.1, 1.2])
     with cow_col1:
         status_badge(cow.state.status.title(), "success" if cow.state.status == "stable" else "warning")
-        st.markdown(f"**Cow ID:** {cow.cow_id}")
-        st.markdown(f"**Last Updated:** {cow.state.last_updated.strftime('%Y-%m-%d %H:%M:%S') if cow.state.last_updated else 'n/a'}")
-        st.markdown(f"**Snapshot Count:** {cow.state.context.get('snapshot_count', 0)}")
+        st.markdown(f"**Cow ID:** {cow.cow_id}", unsafe_allow_html=True)
+        st.markdown(
+            f"**Last Updated:** {cow.state.last_updated.strftime('%Y-%m-%d %H:%M:%S') if cow.state.last_updated else 'n/a'}",
+            unsafe_allow_html=True,
+        )
+        st.markdown(f"**Snapshot Count:** {cow.state.context.get('snapshot_count', 0)}", unsafe_allow_html=True)
     with cow_col2:
-        st.markdown(f"**Latest Prediction:** {cow.latest_prediction['prediction']:.2f} L/day" if cow.latest_prediction else "**Latest Prediction:** n/a")
-        st.markdown(f"**Latest Health:** {cow.latest_health.get('severity', 'n/a')}" if cow.latest_health else "**Latest Health:** n/a")
-        st.markdown(f"**Weather:** {cow.latest_intelligence.weather if cow.latest_intelligence and cow.latest_intelligence.weather else 'n/a'}")
+        st.markdown(
+            f"**Latest Prediction:** {cow.latest_prediction['prediction']:.2f} L/day" if cow.latest_prediction else "**Latest Prediction:** n/a",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"**Latest Health:** {cow.latest_health.get('severity', 'n/a')}" if cow.latest_health else "**Latest Health:** n/a",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"**Weather:** {cow.latest_intelligence.weather if cow.latest_intelligence and cow.latest_intelligence.weather else 'n/a'}",
+            unsafe_allow_html=True,
+        )
     with cow_col3:
-        st.markdown(f"**Recommendations:** {len(cow.recommendations)}")
+        st.markdown(f"**Recommendations:** {len(cow.recommendations)}", unsafe_allow_html=True)
         if cow.recommendations:
             for item in cow.recommendations[:3]:
-                st.markdown(f"- {item.message}")
+                st.markdown(f"- {item.message}", unsafe_allow_html=True)
         else:
-            st.markdown("- No recommendations yet")
+            st.markdown("- No recommendations yet", unsafe_allow_html=True)
 
     st.markdown("---")
     st.subheader("Twin Lifecycle")
