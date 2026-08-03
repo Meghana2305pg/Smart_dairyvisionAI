@@ -23,4 +23,4 @@ class DashboardRepository:
         return self.client.list("observations")
 
     def get_snapshots(self) -> list[dict[str, Any]]:
-        return self.client.list("snapshots")
+        return self.client.list("twin_snapshots")

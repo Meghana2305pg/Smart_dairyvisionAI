@@ -126,6 +126,13 @@ def _restore_workspace_state() -> None:
             farm = farm_result["farm"]
 
     if farm is None and not pending_farm_setup:
+        owner_id = st.session_state.get("user_id")
+        if owner_id:
+            owner_farm_result = st.session_state.farm_service.get_farm_for_owner(owner_id)
+            if owner_farm_result and owner_farm_result.get("farm"):
+                farm = owner_farm_result["farm"]
+
+    if farm is None and not pending_farm_setup:
         farms = st.session_state.dashboard_service.repository.get_farms()
         if farms:
             farm = farms[0]
@@ -404,7 +411,14 @@ def render_farm_setup_screen() -> None:
                 service: FarmService = st.session_state.farm_service
                 farm_id = f"farm-{farm_name.lower().replace(' ', '-') }"
                 try:
-                    result = service.create_farm(farm_id=farm_id, name=farm_name, location=location, farm_size=farm_size)
+                    owner_id = st.session_state.get("user_id")
+                    result = service.create_farm(
+                        farm_id=farm_id,
+                        name=farm_name,
+                        location=location,
+                        farm_size=farm_size,
+                        owner_id=owner_id,
+                    )
                     st.session_state.farm = result["farm"]
                     st.session_state.farm_id = result["farm"].get("farm_id", farm_id)
                     st.session_state.farm_name = result["farm"].get("name", farm_name)
@@ -418,7 +432,8 @@ def render_farm_setup_screen() -> None:
                     st.rerun()
                 except Exception as exc:
                     log_error("farm_creation_failed", farm_id=farm_id, error=str(exc))
-                    st.error("Farm setup could not be completed. Please try again shortly.")
+                    st.exception(exc)
+                    st.code(traceback.format_exc())
 
 
 def render_screen(section: str) -> None:

@@ -328,6 +328,12 @@ def render_herd() -> None:
 
     selected_sort_key = st.session_state.get("herd_sort_order", "Cow ID (Asc)")
 
+    def _reset_herd_filters() -> None:
+        st.session_state.herd_search_term = ""
+        st.session_state.herd_status_filter = "All"
+        st.session_state.herd_breed_filter = "All"
+        st.session_state.herd_sort_order = "Cow ID (Asc)"
+
     st.markdown('<div class="herd-toolbar">', unsafe_allow_html=True)
     toolbar_cols = st.columns([2.2, 1.4, 1.4, 1.6, 1.1, 1.3], gap="small")
 
@@ -368,12 +374,13 @@ def render_herd() -> None:
         )
 
     with toolbar_cols[4]:
-        if st.button("Refresh", key="btn_clear_herd_filters", use_container_width=True, type="secondary"):
-            st.session_state.herd_search_term = ""
-            st.session_state.herd_status_filter = "All"
-            st.session_state.herd_breed_filter = "All"
-            st.session_state.herd_sort_order = "Cow ID (Asc)"
-            st.rerun()
+        st.button(
+            "Refresh",
+            key="btn_clear_herd_filters",
+            use_container_width=True,
+            type="secondary",
+            on_click=_reset_herd_filters,
+        )
 
     with toolbar_cols[5]:
         export_df = pd.DataFrame(
@@ -627,6 +634,6 @@ def _render_registration_panel(cow_service: CowService, cows: list[dict[str, Any
                         st.toast(f"Cow {new_name} ({new_cow_id}) registered successfully!", icon="✅")
                         st.rerun()
                     except Exception as exc:
-                        log_error("cow_registration_failed", cow_id=new_cow_id, error=str(exc))
-                        st.error("Cow registration failed. Please try again.")
+                        st.exception(exc)
+                        raise
     st.markdown("</div>", unsafe_allow_html=True)

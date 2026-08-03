@@ -96,7 +96,19 @@ def render_topbar() -> None:
             st.session_state.farm_twin = None
             st.session_state.pending_farm_setup = False
             st.session_state.cows = []
+            st.session_state.selected_cow_id = None
+            st.session_state.last_selected_cow = None
             st.session_state.active_view = "login"
             st.session_state.active_section = "dashboard"
+            st.session_state.app_state = "NOT_AUTHENTICATED"
+            st.session_state.dashboard_needs_refresh = False
+            st.session_state.observation_submitted = False
+            st.session_state.submitted_cow_id = None
+            st.session_state.daily_ops_last_result = None
+            st.session_state.daily_ops_last_submitted_cow = None
+            st.session_state.profile_tab = "Overview"
+            st.session_state.herd_search_term = ""
+            st.session_state.herd_status_filter = "All"
+            st.session_state.herd_breed_filter = "All"
             st.query_params.clear()
-            st.rerun()
+            st.experimental_rerun()

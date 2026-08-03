@@ -60,6 +60,26 @@ class AppStateFlowTests(unittest.TestCase):
         self.assertEqual(st.session_state.farm["farm_id"], "farm-restore")
         self.assertEqual(st.session_state.app_state, APP_STATE_AUTHENTICATED_WITH_FARM)
 
+    def test_prepare_workspace_state_restores_owner_farm_when_farm_id_missing(self) -> None:
+        initialize_app_state()
+        farm_service = st.session_state.farm_service
+        farm_service.create_farm(farm_id="farm-owner", name="Owner Farm", location="Kisumu")
+
+        st.session_state.authenticated = True
+        st.session_state.user = None
+        st.session_state.user_id = "owner-123"
+        st.session_state.farm = None
+        st.session_state.farm_id = None
+        st.session_state.active_section = "dashboard"
+
+        _prepare_workspace_state()
+
+        self.assertTrue(st.session_state.authenticated)
+        self.assertEqual(st.session_state.user_id, "owner-123")
+        self.assertEqual(st.session_state.farm_id, "farm-owner")
+        self.assertEqual(st.session_state.farm["farm_id"], "farm-owner")
+        self.assertEqual(st.session_state.app_state, APP_STATE_AUTHENTICATED_WITH_FARM)
+
     def test_prepare_workspace_state_keeps_registration_in_farm_setup_once(self) -> None:
         initialize_app_state()
 

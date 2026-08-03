@@ -56,12 +56,58 @@ class SupabaseClient:
     def get_table(self, table_name: str) -> list[dict[str, Any]]:
         return self._tables.setdefault(table_name, [])
 
+    def _remote_available(self) -> bool:
+        return self._client is not None and hasattr(self._client, "table")
+
+    def _identifier_fields(self) -> list[str]:
+        return ["id", "farm_id", "cow_id"]
+
+    def _remote_select(self, table_name: str, filters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        query = self.client.table(table_name).select("*")
+        if filters:
+            for column, value in filters.items():
+                query = query.eq(column, value)
+        response = query.execute()
+        if getattr(response, "error", None):
+            raise RuntimeError(f"Supabase select failed: {response.error}")
+        return getattr(response, "data", []) or []
+
     def insert(self, table_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        if self._remote_available():
+            response = self.client.table(table_name).insert(payload).execute()
+            if getattr(response, "error", None):
+                raise RuntimeError(f"Supabase insert failed: {response.error}")
+            data = getattr(response, "data", None)
+            if isinstance(data, list) and data:
+                return data[0]
+            if isinstance(data, dict):
+                return data
+            return payload
+
         table = self.get_table(table_name)
         table.append(payload)
         return payload
 
     def update(self, table_name: str, identifier: str, payload: dict[str, Any]) -> dict[str, Any]:
+        if self._remote_available():
+            last_error: Exception | None = None
+            for key in self._identifier_fields():
+                response = self.client.table(table_name).update(payload).eq(key, identifier).execute()
+                if getattr(response, "error", None):
+                    error = RuntimeError(f"Supabase update failed for {key}: {response.error}")
+                    last_error = error
+                    if "does not exist" in str(response.error).lower() or "could not find" in str(response.error).lower():
+                        continue
+                    raise error
+                data = getattr(response, "data", None)
+                if isinstance(data, list) and data:
+                    return data[0]
+                if isinstance(data, dict):
+                    return data
+                return payload
+            if last_error is not None:
+                raise last_error
+
         table = self.get_table(table_name)
         for item in table:
             if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
@@ -70,6 +116,25 @@ class SupabaseClient:
         return payload
 
     def delete(self, table_name: str, identifier: str) -> bool:
+        if self._remote_available():
+            last_error: Exception | None = None
+            for key in self._identifier_fields():
+                response = self.client.table(table_name).delete().eq(key, identifier).execute()
+                if getattr(response, "error", None):
+                    error = RuntimeError(f"Supabase delete failed for {key}: {response.error}")
+                    last_error = error
+                    if "does not exist" in str(response.error).lower() or "could not find" in str(response.error).lower():
+                        continue
+                    raise error
+                data = getattr(response, "data", None)
+                if isinstance(data, list) and data:
+                    return True
+                if isinstance(data, dict):
+                    return bool(data)
+                return False
+            if last_error is not None:
+                raise last_error
+
         table = self.get_table(table_name)
         for index, item in enumerate(table):
             if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
@@ -78,10 +143,37 @@ class SupabaseClient:
         return False
 
     def list(self, table_name: str) -> list[dict[str, Any]]:
+        if self._remote_available():
+            return self._remote_select(table_name)
+
         return list(self.get_table(table_name))
 
+    def list_by(self, table_name: str, filters: dict[str, Any]) -> list[dict[str, Any]]:
+        if self._remote_available():
+            return self._remote_select(table_name, filters)
+
+        return [item for item in self.get_table(table_name) if all(item.get(column) == value for column, value in filters.items())]
+
     def get(self, table_name: str, identifier: str) -> dict[str, Any] | None:
-        for item in self.list(table_name):
+        if self._remote_available():
+            last_error: Exception | None = None
+            for key in self._identifier_fields():
+                response = self.client.table(table_name).select("*").eq(key, identifier).execute()
+                if getattr(response, "error", None):
+                    error = RuntimeError(f"Supabase get failed for {key}: {response.error}")
+                    last_error = error
+                    if "does not exist" in str(response.error).lower() or "could not find" in str(response.error).lower():
+                        continue
+                    raise error
+                items = getattr(response, "data", []) or []
+                if items:
+                    return items[0]
+            if last_error is not None:
+                raise last_error
+            return None
+
+        for item in self.get_table(table_name):
             if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
                 return item
+
         return None

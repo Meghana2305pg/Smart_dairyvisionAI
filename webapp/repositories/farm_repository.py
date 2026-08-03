@@ -27,3 +27,6 @@ class FarmRepository:
 
     def list(self) -> list[dict[str, Any]]:
         return self.client.list("farms")
+
+    def list_by_owner(self, owner_id: str) -> list[dict[str, Any]]:
+        return self.client.list_by("farms", {"owner_id": owner_id})
