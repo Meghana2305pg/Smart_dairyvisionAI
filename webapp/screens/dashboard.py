@@ -22,6 +22,7 @@ from webapp.ui.design_system import (
     render_section_title,
     render_timeline_item,
 )
+from webapp.utils.logging import log_event
 
 
 def _get_latest_twin_snapshot(cow_service: Any, cow_id: str | None) -> Any | None:
@@ -69,6 +70,7 @@ def _categorize_health_alerts(health_items: list[dict[str, Any]]) -> tuple[int, 
 
 def render_dashboard() -> None:
     """Render the dashboard using Design System tokens and reusable UI components."""
+    print("[DEBUG] Render #1/2/3 start")
     st.markdown(
         """
         <style>
@@ -127,6 +129,7 @@ def render_dashboard() -> None:
 
     with st.spinner("Loading dashboard..."):
         dashboard_service: DashboardService = st.session_state.dashboard_service
+        print("[DEBUG] dashboard_service object:", dashboard_service)
         dashboard = dashboard_service.build_dashboard()
         base_temp, base_hum = get_current_weather()
         submitted_cow_id = st.session_state.get("submitted_cow_id") or st.session_state.get("selected_cow_id")
@@ -157,7 +160,26 @@ def render_dashboard() -> None:
         prediction = predict_milk_yield(input_row, base_temp=base_temp, base_hum=base_hum)
         health = get_health_alerts_for_input(input_row, base_temp=base_temp, base_hum=base_hum)
 
-    cow_count = int(dashboard.herd.get("cow_count", 0))
+    cow_service = st.session_state.get("cow_service")
+    print("[DEBUG] dashboard render cows before branch:", len(live_cows) if 'live_cows' in locals() else 'n/a')
+    live_cows = []
+    if cow_service is not None:
+        try:
+            live_cows = cow_service.get_cows() or []
+        except Exception:
+            live_cows = []
+
+    cow_count = int(dashboard.herd.get("cow_count", 0) or 0)
+    if cow_count == 0 and live_cows:
+        cow_count = len(live_cows)
+
+    print("[DEBUG] Render summary -> cows:", len(live_cows), "dashboard.herd:", dashboard.herd, "session_state keys:", sorted(list(st.session_state.keys())))
+    log_event("debug_dashboard_render", cow_count=cow_count, live_cow_count=len(live_cows), branch="empty" if cow_count == 0 else "normal")
+    if cow_count == 0:
+        print("[DEBUG] EMPTY branch executed")
+    else:
+        print("[DEBUG] NORMAL branch executed")
+
     observation_count = int(dashboard.herd.get("observation_count", 0))
     recommendation_items = list(dashboard.recommendations or [])
     alert_entries = list(dashboard.health or [])
@@ -386,7 +408,14 @@ def render_dashboard() -> None:
     with col_r3_right:
         render_section_title("⚡ Quick Actions", "Direct shortcuts to key operational workflows")
 
-        st.markdown('<div class="dash-quick-actions-card" style="height:100%;">', unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="dashboard-card" style="padding:1rem; margin-bottom:0.85rem;">
+                <div style="font-weight:700; margin-bottom:0.9rem;">Quick Actions</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         if st.button("➕ Add Cow", key="qa_btn_add_cow", type="primary", use_container_width=True):
             st.session_state.show_herd_form = True
@@ -415,8 +444,6 @@ def render_dashboard() -> None:
 
         if st.button("📄 Generate Report", key="qa_btn_gen_report", type="secondary", use_container_width=True):
             st.toast("Farm summary report generated successfully!", icon="✅")
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.get("dashboard_needs_refresh"):
         st.session_state["dashboard_needs_refresh"] = False

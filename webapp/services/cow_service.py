@@ -9,6 +9,7 @@ import streamlit as st
 
 from webapp.digital_twin.cow_twin import CowTwin
 from webapp.repositories.cow_repository import CowRepository
+from webapp.utils.logging import log_event
 
 
 class CowService:
@@ -185,4 +186,7 @@ class CowService:
         return deleted
 
     def get_cows(self) -> list[dict[str, Any]]:
-        return [self._normalize_cow_record(item) for item in self.repository.list()]
+        print("[DEBUG] CowService.get_cows() called")
+        cows = [self._normalize_cow_record(item) for item in self.repository.list()]
+        log_event("debug_cow_service_get_cows", cow_count=len(cows))
+        return cows

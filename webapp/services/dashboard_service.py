@@ -9,6 +9,7 @@ from webapp.repositories.dashboard_repository import DashboardRepository
 from webapp.services.cow_service import CowService
 from webapp.services.farm_service import FarmService
 from webapp.services.observation_service import ObservationService
+from webapp.utils.logging import log_event
 
 
 @dataclass(slots=True)
@@ -39,15 +40,18 @@ class DashboardService:
         self.observation_service = observation_service or ObservationService(cow_service=self.cow_service)
 
     def build_dashboard(self) -> DashboardView:
+        print("[DEBUG] DashboardService.build_dashboard() called")
+        log_event("debug_dashboard_service_build", source="build_dashboard")
         farms = self.repository.get_farms()
         cows = self.repository.get_cows()
         observations = self.repository.get_observations()
         snapshots = self.repository.get_snapshots()
 
         farm_record = farms[0] if farms else {"farm_id": "", "name": "No Farm", "location": ""}
-        active_cow_ids = [cow_id for cow_id in self.cow_service._cow_twins.keys() if cow_id]
-        if not active_cow_ids and cows:
-            active_cow_ids = [cow.get("cow_id") for cow in cows if cow.get("cow_id")]
+        service_cows = self.cow_service.get_cows()
+        active_cow_ids = [cow.get("cow_id") for cow in service_cows if cow.get("cow_id")]
+        if not active_cow_ids:
+            active_cow_ids = [cow_id for cow_id in self.cow_service._cow_twins.keys() if cow_id]
 
         herd_payload = {
             "cow_count": len(active_cow_ids),

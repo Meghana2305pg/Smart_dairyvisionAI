@@ -88,6 +88,28 @@ class ApplicationServiceTests(unittest.TestCase):
         self.assertTrue(dashboard.predictions)
         self.assertTrue(dashboard.snapshots)
 
+    def test_dashboard_service_uses_cow_service_repository_for_cow_count(self) -> None:
+        class EmptyDashboardRepository:
+            def get_farms(self) -> list[dict[str, object]]:
+                return []
+
+            def get_cows(self) -> list[dict[str, object]]:
+                return []
+
+            def get_observations(self) -> list[dict[str, object]]:
+                return []
+
+            def get_snapshots(self) -> list[dict[str, object]]:
+                return []
+
+        cow_service = CowService()
+        cow_service.repository.list = lambda: [{"cow_tag": "cow-777", "cow_name": "Mina"}]
+        dashboard_service = DashboardService(repository=EmptyDashboardRepository(), cow_service=cow_service)
+
+        dashboard = dashboard_service.build_dashboard()
+
+        self.assertEqual(dashboard.herd["cow_count"], 1)
+
     def test_auth_service_registers_and_tracks_current_user(self) -> None:
         class FakeAuth:
             def sign_up(self, payload: dict[str, str]) -> SimpleNamespace:

@@ -23,6 +23,7 @@ MENU_ITEMS = [
 def render_sidebar() -> str:
     """Render the permanent left sidebar navigation using the design system."""
     current_section = st.session_state.get("active_section", "dashboard")
+    print("[DEBUG] sidebar render current_section", current_section)
 
     # Match active section by key or label
     default_index = 0
@@ -304,4 +305,5 @@ def render_sidebar() -> str:
 
     selected_key = next((item["key"] for item in MENU_ITEMS if item["label"] == selected), current_section)
     st.session_state.active_section = selected_key
+    print("[DEBUG] sidebar selection changed to", selected_key)
     return selected_key

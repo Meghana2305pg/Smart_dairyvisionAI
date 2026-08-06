@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from webapp.ui import (
     BORDER,
@@ -86,6 +87,17 @@ class DesignSystemTests(unittest.TestCase):
             render_empty_state(title="No Alerts", message="Everything is normal", icon="✅")
         except Exception as exc:
             self.fail(f"Design system render helper raised an unexpected exception: {exc}")
+
+    @patch("webapp.ui.design_system.st.caption")
+    @patch("webapp.ui.design_system.st.subheader")
+    def test_section_title_renders_plain_text_subtitle(self, subheader_mock, caption_mock) -> None:
+        """Section titles should render descriptive text without relying on raw HTML markup."""
+        from webapp.ui.design_system import render_section_title
+
+        render_section_title("Section Title", subtitle="<strong>Section Subtitle</strong>")
+
+        subheader_mock.assert_called_once_with("Section Title")
+        caption_mock.assert_called_once_with("<strong>Section Subtitle</strong>")
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 from typing import Any
 
 import pandas as pd
@@ -345,61 +346,115 @@ def render_digital_twin() -> None:
     left_col, right_col = st.columns([1.15, 0.85], gap="medium")
 
     with left_col:
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">Current State</div>', unsafe_allow_html=True)
         if dashboard["latest_observation"]:
-            st.write(f"Latest observation: {dashboard['latest_observation']['notes']}")
-            st.write(f"Temperature: {dashboard['latest_observation']['temperature']} °C")
-            st.write(f"Humidity: {dashboard['latest_observation']['humidity']} %")
-            st.write(f"Weight: {dashboard['latest_observation']['weight']} kg")
+            observation_body = (
+                f"<div>Latest observation: {escape(str(dashboard['latest_observation']['notes']))}</div>"
+                f"<div>Temperature: {escape(str(dashboard['latest_observation']['temperature']))} °C</div>"
+                f"<div>Humidity: {escape(str(dashboard['latest_observation']['humidity']))} %</div>"
+                f"<div>Weight: {escape(str(dashboard['latest_observation']['weight']))} kg</div>"
+            )
         else:
-            st.write("No latest observation is available yet.")
-        st.markdown('</div>', unsafe_allow_html=True)
+            observation_body = '<div>No latest observation is available yet.</div>'
 
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">Prediction Summary</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="twin-panel">
+                <div class="twin-panel-title">Current State</div>
+                <div style="margin-top:0.75rem; color:#334155; line-height:1.6;">
+                    {observation_body}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
         prediction_value = (dashboard['latest_prediction'] or {}).get('prediction', 'n/a')
-        st.metric("Predicted Milk Yield", f"{prediction_value} L/day" if prediction_value != 'n/a' else 'n/a')
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="twin-panel">
+                <div class="twin-panel-title">Prediction Summary</div>
+                <div style="margin-top:0.85rem; font-size:1.35rem; font-weight:800; color:#0f172a;">{escape(str(prediction_value))} L/day</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">Recent Behaviour</div>', unsafe_allow_html=True)
         if dashboard['timeline']:
-            for item in reversed(dashboard['timeline'][-3:]):
-                st.write(f"- {item['timestamp']} • {item['notes']}")
+            timeline_items = "".join(
+                f"<div style='margin-bottom:0.55rem;'>• {escape(str(item['timestamp']))} • {escape(str(item['notes']))}</div>"
+                for item in reversed(dashboard['timeline'][-3:])
+            )
         else:
-            st.write("No recent behavior data has been recorded yet.")
-        st.markdown('</div>', unsafe_allow_html=True)
+            timeline_items = '<div>No recent behavior data has been recorded yet.</div>'
+
+        st.markdown(
+            f"""
+            <div class="twin-panel">
+                <div class="twin-panel-title">Recent Behaviour</div>
+                <div style="margin-top:0.75rem; color:#334155; line-height:1.6;">
+                    {timeline_items}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     with right_col:
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">AI Insights</div>', unsafe_allow_html=True)
         if dashboard['health_status']:
-            st.write(f"Alert category: {dashboard['health_status'].get('alert_category', 'Healthy')}")
-            st.write(f"Severity: {dashboard['health_status'].get('severity', 'Low')}")
-            st.write(f"Stress category: {dashboard['health_status'].get('stress_category', 'Normal')}")
+            health_body = (
+                f"<div>Alert category: {escape(str(dashboard['health_status'].get('alert_category', 'Healthy')))}</div>"
+                f"<div>Severity: {escape(str(dashboard['health_status'].get('severity', 'Low')))}</div>"
+                f"<div>Stress category: {escape(str(dashboard['health_status'].get('stress_category', 'Normal')))}</div>"
+            )
         else:
-            st.write("No AI health insight is available yet.")
-        st.markdown('</div>', unsafe_allow_html=True)
+            health_body = '<div>No AI health insight is available yet.</div>'
 
-        st.markdown('<div class="twin-panel"><div class="twin-panel-title">Recommendations</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="twin-panel">
+                <div class="twin-panel-title">AI Insights</div>
+                <div style="margin-top:0.75rem; color:#334155; line-height:1.6;">
+                    {health_body}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
         if dashboard['recommendations']:
-            for item in dashboard['recommendations'][:4]:
-                st.markdown(
-                    f"""
-                    <div class="twin-recommendation">
-                        <div class="twin-pill {badge_class}">{badge_text}</div>
-                        <div style="margin-top: 0.55rem; color: #334155;">{item.get('message', 'No guidance available')}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+            recommendations_html = "".join(
+                f"<div class='twin-recommendation'><div class='twin-pill {badge_class}'>{badge_text}</div><div style='margin-top:0.55rem; color: #334155;'>{escape(str(item.get('message', 'No guidance available')))}</div></div>"
+                for item in dashboard['recommendations'][:4]
+            )
         else:
-            st.write("No recommendations have been generated yet.")
-        st.markdown('</div>', unsafe_allow_html=True)
+            recommendations_html = '<div>No recommendations have been generated yet.</div>'
 
-    st.markdown('<div class="twin-panel"><div class="twin-panel-title">Timeline</div>', unsafe_allow_html=True)
-    if dashboard['timeline']:
-        for item in reversed(dashboard['timeline'][:6]):
-            st.write(f"- {item['timestamp']} • {item['notes']}")
-    else:
-        st.write("No twin timeline entries are available yet.")
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="twin-panel">
+                <div class="twin-panel-title">Recommendations</div>
+                {recommendations_html}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    st.markdown('</div>', unsafe_allow_html=True)
+        if dashboard['timeline']:
+            timeline_html = "".join(
+                f"<div style='margin-bottom:0.55rem;'>• {escape(str(item['timestamp']))} • {escape(str(item['notes']))}</div>"
+                for item in reversed(dashboard['timeline'][:6])
+            )
+        else:
+            timeline_html = '<div>No twin timeline entries are available yet.</div>'
+
+        st.markdown(
+            f"""
+            <div class="twin-panel">
+                <div class="twin-panel-title">Timeline</div>
+                <div style="margin-top:0.75rem; color:#334155; line-height:1.6;">
+                    {timeline_html}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )

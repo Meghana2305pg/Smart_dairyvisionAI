@@ -24,6 +24,7 @@ def render_app_shell(main_renderer: Callable[[], None]) -> None:
     has_farm = bool(st.session_state.get("farm"))
 
     if authenticated and has_farm:
+        print("[DEBUG] shell render authenticated has_farm", st.session_state.get("active_section"))
         # Render clean topbar header
         render_topbar()
 

@@ -476,24 +476,13 @@ def render_page_header(
     subtitle: str = "",
     badge: str = "",
 ) -> None:
-    """Render a unified top hero page header."""
-    badge_html = f"<div class='status-badge info'>{escape(badge)}</div>" if badge else ""
-    subtitle_html = f"<div style='color:var(--dv-muted);font-size:{FONT_BODY};margin-top:0.4rem;'>{escape(subtitle)}</div>" if subtitle else ""
+    """Render a unified top hero page header using plain Streamlit text primitives."""
+    if badge:
+        st.markdown(f"<div class='status-badge info'>{escape(badge)}</div>", unsafe_allow_html=True)
 
-    st.markdown(
-        f"""
-        <div class="hero-card">
-            <div style='display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;'>
-                <div>
-                    <h1 style='font-size:{FONT_PAGE_TITLE};margin:0;'>{escape(title)}</h1>
-                    {subtitle_html}
-                </div>
-                {badge_html}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.subheader(title)
+    if subtitle:
+        st.caption(subtitle)
 
 
 def render_section_title(
@@ -501,22 +490,12 @@ def render_section_title(
     subtitle: str = "",
     badge: str = "",
 ) -> None:
-    """Render a section header with title and optional description."""
-    badge_html = f"<span class='status-badge neutral'>{escape(badge)}</span>" if badge else ""
-    subtitle_html = f"<p style='color:var(--dv-muted);font-size:{FONT_BODY};margin:0.2rem 0 0;'>{escape(subtitle)}</p>" if subtitle else ""
-
-    st.markdown(
-        f"""
-        <div style='margin-bottom:0.75rem;padding-bottom:0.4rem;border-bottom:1px solid var(--dv-border);'>
-            <div style='display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;'>
-                <h3 style='font-size:{FONT_SECTION_TITLE};font-weight:700;margin:0;color:var(--dv-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>{escape(title)}</h3>
-                {badge_html}
-            </div>
-            {subtitle_html}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Render a section header with title and optional description using plain text primitives."""
+    st.subheader(title)
+    if subtitle:
+        st.caption(subtitle)
+    if badge:
+        st.markdown(f"<span class='status-badge neutral'>{escape(badge)}</span>", unsafe_allow_html=True)
 
 
 def render_metric_card(

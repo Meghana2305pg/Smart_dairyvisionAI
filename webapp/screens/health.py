@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 from typing import Any
 
 import pandas as pd
@@ -253,25 +254,22 @@ def render_health() -> None:
 
     for idx, alert in enumerate(filtered_alerts):
         severity_class = _severity_badge_class(alert["severity"])
-        st.markdown('<div class="health-alert-card {}">'.format(severity_class), unsafe_allow_html=True)
-        header_col, badge_col = st.columns([3, 1])
-        with header_col:
-            st.markdown(
-                f"""
+        st.markdown(
+            f"""
+            <div class="health-alert-card {severity_class}">
                 <div class="health-alert-head">
                     <div>
-                        <p class="health-alert-name">{alert['cow_name']}</p>
-                        <div class="health-alert-meta">Cow ID: {alert['cow_id']}</div>
+                        <p class="health-alert-name">{escape(alert['cow_name'])}</p>
+                        <div class="health-alert-meta">Cow ID: {escape(alert['cow_id'])}</div>
                     </div>
+                    <div class="severity-pill {severity_class}">{escape(alert['severity'])}</div>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        with badge_col:
-            st.markdown(f'<div class="severity-pill {severity_class}">{alert["severity"]}</div>', unsafe_allow_html=True)
-
-        st.markdown(f'<div class="health-alert-meta">Alert Type: {alert["alert_type"]} • {alert["timestamp"].strftime("%Y-%m-%d %H:%M")}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="health-alert-desc">{alert["description"]}</div>', unsafe_allow_html=True)
+                <div class="health-alert-meta">Alert Type: {escape(alert['alert_type'])} • {escape(alert['timestamp'].strftime('%Y-%m-%d %H:%M'))}</div>
+                <div class="health-alert-desc">{escape(alert['description'])}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         action_cols = st.columns([1, 1, 1, 1.1], gap="small")
         with action_cols[0]:
@@ -300,5 +298,3 @@ def render_health() -> None:
                     reviewed.add(reviewed_id)
                 st.session_state.reviewed_health_alerts = reviewed
                 st.rerun()
-
-        st.markdown('</div>', unsafe_allow_html=True)
