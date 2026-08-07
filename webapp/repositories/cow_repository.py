@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
 from .supabase_client import SupabaseClient
 
@@ -14,7 +15,14 @@ class CowRepository:
         self.client = client or SupabaseClient.from_env()
 
     def _matches_identifier(self, item: dict[str, Any], cow_id: str) -> bool:
-        return str(item.get("cow_tag") or item.get("cow_id") or "") == cow_id
+        return any(str(item.get(key) or "") == cow_id for key in ("id", "cow_id", "cow_tag"))
+
+    def _is_uuid(self, value: str) -> bool:
+        try:
+            UUID(value)
+            return True
+        except (TypeError, ValueError):
+            return False
 
     def _unwrap_response(self, response: Any) -> dict[str, Any] | None:
         if getattr(response, "error", None):
@@ -30,14 +38,38 @@ class CowRepository:
         return self.client.insert("cows", payload)
 
     def get(self, cow_id: str) -> dict[str, Any] | None:
+        print("STEP 4 CowRepository.get")
+        print("DEBUG CowRepository.get input cow_id", cow_id)
         if self.client._remote_available():
+            # Remote cows table stores UUID in `id` and human tag in `cow_tag`.
+            if self._is_uuid(cow_id):
+                records = self.client.list_by("cows", {"id": cow_id})
+                print("DEBUG CowRepository.get by id records", records)
+                if records:
+                    result = records[0]
+                    print("DEBUG CowRepository.get returning", result)
+                    return result
+
             records = self.client.list_by("cows", {"cow_tag": cow_id})
-            return records[0] if records else None
+            print("DEBUG CowRepository.get by cow_tag records", records)
+            if records:
+                result = records[0]
+                print("DEBUG CowRepository.get returning", result)
+                return result
+
+            records = self.client.list_by("cows", {"cow_id": cow_id})
+            print("DEBUG CowRepository.get by cow_id records", records)
+            if records:
+                result = records[0]
+                print("DEBUG CowRepository.get returning", result)
+                return result
 
         for item in self.client.get_table("cows"):
             if self._matches_identifier(item, cow_id):
+                print("DEBUG CowRepository.get fallback returning", item)
                 return item
 
+        print("DEBUG CowRepository.get returning None for", cow_id)
         return None
 
     def update(self, cow_id: str, payload: dict[str, Any]) -> dict[str, Any]:

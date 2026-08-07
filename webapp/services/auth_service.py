@@ -173,36 +173,3 @@ class AuthService:
             pass
 
         return None
-        metadata = getattr(user, "user_metadata", None) or getattr(user, "app_metadata", None) or {}
-        if isinstance(metadata, dict):
-            payload["full_name"] = metadata.get("full_name") or metadata.get("name") or payload["full_name"]
-            payload["phone"] = metadata.get("phone") or payload["phone"]
-        if getattr(user, "full_name", None):
-            payload["full_name"] = getattr(user, "full_name")
-        return payload
-
-    def current_user(self) -> dict[str, Any] | None:
-        if self._current_user is not None:
-            return self._current_user
-
-        if not self.client.is_configured:
-            return None
-
-        try:
-            if hasattr(self.client.client.auth, "get_user"):
-                response = self.client.client.auth.get_user()
-                user = getattr(response, "user", None)
-                if user is not None:
-                    self._current_user = self._build_user_payload(user)
-                    return self._current_user
-
-            if hasattr(self.client.client.auth, "get_session"):
-                response = self.client.client.auth.get_session()
-                user = getattr(response, "user", None)
-                if user is not None:
-                    self._current_user = self._build_user_payload(user)
-                    return self._current_user
-        except Exception:
-            pass
-
-        return None

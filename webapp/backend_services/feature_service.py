@@ -52,6 +52,7 @@ def get_feature_defaults(base_temp: float = DEFAULT_BASE_TEMP, base_hum: float =
 
 def build_feature_row(input_row: dict[str, Any], base_temp: float = DEFAULT_BASE_TEMP, base_hum: float = DEFAULT_BASE_HUM) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """Build a one-row feature matrix from current user input values using the existing engineering logic."""
+    print("STEP 7 build_feature_row")
     try:
         from config import ALL_FEATURES, TARGET
         from feature_engineering import add_engineered_features
@@ -59,6 +60,7 @@ def build_feature_row(input_row: dict[str, Any], base_temp: float = DEFAULT_BASE
         raise RuntimeError("The existing feature-engineering backend could not be imported.") from exc
 
     defaults = get_feature_defaults(base_temp=base_temp, base_hum=base_hum)
+    print("STEP 7a get_feature_defaults")
     row_data = {
         "age": float(input_row.get("age", defaults.get("age", 36.0))),
         "weight": float(input_row.get("weight", defaults.get("weight", 450.0))),

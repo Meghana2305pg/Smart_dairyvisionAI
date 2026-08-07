@@ -6,6 +6,8 @@ import sys
 import traceback
 from pathlib import Path
 
+
+
 current_path = Path(__file__).resolve()
 project_root = None
 for candidate in [current_path.parent, current_path.parent.parent]:
@@ -172,6 +174,11 @@ def initialize_app_state() -> None:
     cow_service = CowService()
     observation_service = ObservationService(cow_service=cow_service)
     dashboard_service = DashboardService(cow_service=cow_service, observation_service=observation_service)
+    print("===================================")
+    print("APP STARTUP")
+    print("cow_service id =", id(cow_service))
+    print("observation_service id =", id(observation_service))
+    print("===================================")
     print("[DEBUG] st.session_state.cow_service assigned", cow_service)
     print("[DEBUG] st.session_state.dashboard assigned", dashboard_service)
     log_event("debug_session_services_initialized")
@@ -449,6 +456,7 @@ def render_farm_setup_screen() -> None:
 
 def render_screen(section: str) -> None:
     """Render the requested screen."""
+    print("STEP 1 render_screen")
     print("[DEBUG] render_screen called for", section, "active_section=", st.session_state.get("active_section"))
     log_event("debug_render_screen", section=section, active_section=st.session_state.get("active_section"), cow_count=len(st.session_state.get("cows") or []))
     section_map = {

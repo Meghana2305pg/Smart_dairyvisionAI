@@ -16,6 +16,7 @@ ensure_project_on_path()
 @st.cache_resource(show_spinner=False)
 def load_model() -> Any:
     """Load the trained model once and reuse it across the app session."""
+    print("STEP 8 load_model")
     try:
         import joblib
     except ImportError as exc:

@@ -3,20 +3,25 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from webapp.repositories.cow_repository import CowRepository
 from webapp.repositories.supabase_client import SupabaseClient
 from webapp.services.auth_service import AuthService
 from webapp.services.cow_service import CowService
 from webapp.services.dashboard_service import DashboardService
 from webapp.services.farm_service import FarmService
 from webapp.services.observation_service import ObservationService
+from webapp.digital_twin.cow_twin import CowTwin
 
 
 class ApplicationServiceTests(unittest.TestCase):
     def setUp(self) -> None:
+        self.supabase_available_patcher = patch.object(SupabaseClient, "_remote_available", return_value=False)
+        self.supabase_available_patcher.start()
         SupabaseClient.from_env().reset_in_memory_store()
 
     def tearDown(self) -> None:
         SupabaseClient.from_env().reset_in_memory_store()
+        self.supabase_available_patcher.stop()
 
     def test_supabase_client_creates_from_environment(self) -> None:
         with patch.dict(os.environ, {"SUPABASE_URL": "https://demo.supabase.co", "SUPABASE_ANON_KEY": "demo-key"}, clear=False):
@@ -61,6 +66,102 @@ class ApplicationServiceTests(unittest.TestCase):
 
         self.assertEqual(result["snapshot"].cow_id, "cow-202")
         self.assertIn("latest_snapshot_id", result["cow_twin"]["state"]["context"])
+        self.assertEqual(result["cow_twin"]["cow_id"], "cow-202")
+
+    def test_observation_service_uses_cow_uuid_when_cow_tag_is_selected(self) -> None:
+        from uuid import uuid4
+
+        client = SupabaseClient.from_env()
+        client.reset_in_memory_store()
+        client._client = None
+        cow_uuid = str(uuid4())
+        client.get_table("cows").append({"id": cow_uuid, "cow_tag": "cow-001", "cow_name": "Bella"})
+
+        cow_service = CowService()
+        observation_service = ObservationService(cow_service=cow_service)
+
+        saved_payload: dict[str, object] = {}
+        original_create = observation_service.repository.create
+
+        def capture(payload: dict[str, object]) -> dict[str, object]:
+            saved_payload.update(payload)
+            return payload
+
+        observation_service.repository.create = capture
+        observation_service.record_observation(
+            cow_id="cow-001",
+            age=24.0,
+            weight=500.0,
+            feed=20.0,
+            temperature=30.0,
+            humidity=70.0,
+            health_status=0,
+            notes="test note",
+        )
+        observation_service.repository.create = original_create
+
+        self.assertEqual(saved_payload["cow_id"], cow_uuid)
+        self.assertEqual(saved_payload["feed"], 20.0)
+        self.assertEqual(saved_payload["temperature"], 30.0)
+        self.assertEqual(saved_payload["humidity"], 70.0)
+        self.assertEqual(saved_payload["health_status"], 0)
+        self.assertEqual(saved_payload["notes"], "test note")
+
+    def test_remote_cow_repository_get_uses_cow_tag_for_non_uuid_values(self) -> None:
+        from uuid import uuid4
+
+        with patch.object(SupabaseClient, "_remote_available", return_value=True):
+            client = SupabaseClient.from_env()
+            calls: list[dict[str, str]] = []
+
+            def fake_list_by(table_name: str, filters: dict[str, str]) -> list[dict[str, str]]:
+                calls.append(filters)
+                if filters == {"cow_tag": "cow-001"}:
+                    return [{"id": "uuid-test-123", "cow_tag": "cow-001", "cow_name": "Bella"}]
+                return []
+
+            client.list_by = fake_list_by  # type: ignore[assignment]
+            repo = CowRepository(client=client)
+
+            cow_record = repo.get("cow-001")
+
+        self.assertEqual(cow_record["id"], "uuid-test-123")
+        self.assertEqual(calls[0], {"cow_tag": "cow-001"})
+
+    def test_observation_service_resolves_cow_id_uuid_from_local_cow_record(self) -> None:
+        from uuid import uuid4
+
+        client = SupabaseClient.from_env()
+        client.reset_in_memory_store()
+        client._client = None
+        cow_uuid = str(uuid4())
+        client.get_table("cows").append({"id": cow_uuid, "cow_tag": "cow-001", "cow_name": "Bella"})
+
+        cow_service = CowService()
+        observation_service = ObservationService(cow_service=cow_service)
+
+        saved_payload: dict[str, object] = {}
+        original_create = observation_service.repository.create
+
+        def capture(payload: dict[str, object]) -> dict[str, object]:
+            saved_payload.update(payload)
+            return payload
+
+        observation_service.repository.create = capture
+        observation_service.record_observation(
+            cow_id=cow_uuid,
+            age=24.0,
+            weight=500.0,
+            feed=20.0,
+            temperature=30.0,
+            humidity=70.0,
+            health_status=0,
+            notes="uuid selection test",
+        )
+        observation_service.repository.create = original_create
+
+        self.assertEqual(saved_payload["cow_id"], cow_uuid)
+        self.assertEqual(saved_payload["notes"], "uuid selection test")
 
     def test_dashboard_service_aggregates_farm_herd_predictions_health_and_snapshots(self) -> None:
         farm_service = FarmService()

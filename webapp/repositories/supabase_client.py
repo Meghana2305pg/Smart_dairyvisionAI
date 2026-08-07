@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
 from supabase import create_client
+
+from webapp.utils.logging import log_event, log_error
+
+try:
+    from postgrest.exceptions import APIError
+except ImportError:
+    APIError = Exception
 
 
 class SupabaseClient:
@@ -67,32 +75,153 @@ class SupabaseClient:
         if filters:
             for column, value in filters.items():
                 query = query.eq(column, value)
-        response = query.execute()
+        try:
+            response = query.execute()
+        except APIError as exc:
+            self._logger_remote_select_failure(table_name, exc)
+            return self._fallback_local_select(table_name, filters)
+
         if getattr(response, "error", None):
             raise RuntimeError(f"Supabase select failed: {response.error}")
         return getattr(response, "data", []) or []
 
     def insert(self, table_name: str, payload: dict[str, Any]) -> dict[str, Any]:
+        normalized_payload = self._normalize_payload(payload)
+        log_event("supabase_insert_attempt", table=table_name, insert_payload=normalized_payload)
         if self._remote_available():
-            response = self.client.table(table_name).insert(payload).execute()
-            if getattr(response, "error", None):
-                raise RuntimeError(f"Supabase insert failed: {response.error}")
-            data = getattr(response, "data", None)
-            if isinstance(data, list) and data:
-                return data[0]
-            if isinstance(data, dict):
-                return data
-            return payload
+            try:
+                print("====================================")
+                print("INSERT TABLE:", table_name)
+
+                try:
+                    print("========== HEADERS ==========")
+                    print(self.client.postgrest.session.headers)
+                    print(self.client.postgrest.headers)
+                    print("=============================")
+                except Exception as e:
+                    print("HEADER ERROR:", e)
+
+                print("====================================")
+                print("========== AUTH DEBUG ==========")
+
+                try:
+                    u = self.client.auth.get_user()
+                    print("USER:", u)
+                except Exception as e:
+                    print("GET USER ERROR:", e)
+
+                try:
+                    s = self.client.auth.get_session()
+                    print("SESSION:", s)
+                except Exception as e:
+                    print("GET SESSION ERROR:", e)
+
+                print("================================")
+                print("========== INSERT DEBUG ==========")
+                print("TABLE:", table_name)
+                print("PAYLOAD:", normalized_payload)
+
+                try:
+                    print("AUTH HEADER:",
+                        self.client.postgrest.session.headers.get("Authorization"))
+                except Exception as e:
+                    print("HEADER ERROR:", e)
+
+                print("===============================")
+                try:
+                    response = (
+                        self.client
+                        .table(table_name)
+                        .insert(normalized_payload)
+                        .execute()
+                    )
+
+                    print("INSERT SUCCESS")
+                    print(response)
+
+                except Exception as e:
+                    print("INSERT EXCEPTION")
+                    print(type(e))
+                    print(repr(e))
+                    import traceback
+                    traceback.print_exc()
+                    raise
+            except APIError as exc:
+                log_error(
+                    "supabase_insert_api_error",
+                    table=table_name,
+                    insert_payload=normalized_payload,
+                    error=str(exc),
+                )
+                raise RuntimeError(f"Supabase insert failed: {exc}") from exc
+
+            response_error = getattr(response, "error", None)
+            response_data = getattr(response, "data", None)
+            if response_error:
+                log_error(
+                    "supabase_insert_response_error",
+                    table=table_name,
+                    insert_payload=normalized_payload,
+                    response_error=str(response_error),
+                    response_data=response_data,
+                )
+                raise RuntimeError(f"Supabase insert failed: {response_error}")
+
+            log_event(
+                "supabase_insert_response",
+                table=table_name,
+                response_data=response_data,
+            )
+            if isinstance(response_data, list) and response_data:
+                return response_data[0]
+            if isinstance(response_data, dict):
+                return response_data
+            return normalized_payload
 
         table = self.get_table(table_name)
-        table.append(payload)
-        return payload
+        table.append(normalized_payload)
+        log_event("supabase_local_insert", table=table_name, insert_payload=normalized_payload)
+        return normalized_payload
+
+    def _fallback_local_select(self, table_name: str, filters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        if filters is None:
+            return list(self.get_table(table_name))
+        return [item for item in self.get_table(table_name) if all(item.get(column) == value for column, value in filters.items())]
+
+    def _normalize_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        normalized: dict[str, Any] = {}
+        for key, value in payload.items():
+            if isinstance(value, datetime):
+                normalized[key] = value.isoformat()
+            else:
+                normalized[key] = value
+        return normalized
+
+    def _logger_remote_insert_failure(self, table_name: str, exc: Exception) -> None:
+        print(f"Supabase remote insert failed for {table_name}: {exc}")
+
+    def _logger_remote_select_failure(self, table_name: str, exc: Exception) -> None:
+        print(f"Supabase remote select failed for {table_name}: {exc}")
+
+    def _logger_remote_update_failure(self, table_name: str, key: str, exc: Exception) -> None:
+        print(f"Supabase remote update failed for {table_name} ({key}): {exc}")
+
+    def _logger_remote_delete_failure(self, table_name: str, key: str, exc: Exception) -> None:
+        print(f"Supabase remote delete failed for {table_name} ({key}): {exc}")
+
+    def _logger_remote_get_failure(self, table_name: str, key: str, exc: Exception) -> None:
+        print(f"Supabase remote get failed for {table_name} ({key}): {exc}")
 
     def update(self, table_name: str, identifier: str, payload: dict[str, Any]) -> dict[str, Any]:
         if self._remote_available():
             last_error: Exception | None = None
             for key in self._identifier_fields():
-                response = self.client.table(table_name).update(payload).eq(key, identifier).execute()
+                try:
+                    response = self.client.table(table_name).update(payload).eq(key, identifier).execute()
+                except APIError as exc:
+                    self._logger_remote_update_failure(table_name, key, exc)
+                    return self._fallback_local_update(table_name, identifier, payload)
+
                 if getattr(response, "error", None):
                     error = RuntimeError(f"Supabase update failed for {key}: {response.error}")
                     last_error = error
@@ -108,18 +237,26 @@ class SupabaseClient:
             if last_error is not None:
                 raise last_error
 
+        return self._fallback_local_update(table_name, identifier, payload)
+
+    def _fallback_local_update(self, table_name: str, identifier: str, payload: dict[str, Any]) -> dict[str, Any]:
         table = self.get_table(table_name)
         for item in table:
             if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
                 item.update(payload)
                 return item
-        return payload
+        raise RuntimeError(f"Local update failed: {identifier} not found in {table_name}")
 
     def delete(self, table_name: str, identifier: str) -> bool:
         if self._remote_available():
             last_error: Exception | None = None
             for key in self._identifier_fields():
-                response = self.client.table(table_name).delete().eq(key, identifier).execute()
+                try:
+                    response = self.client.table(table_name).delete().eq(key, identifier).execute()
+                except APIError as exc:
+                    self._logger_remote_delete_failure(table_name, key, exc)
+                    return self._fallback_local_delete(table_name, identifier)
+
                 if getattr(response, "error", None):
                     error = RuntimeError(f"Supabase delete failed for {key}: {response.error}")
                     last_error = error
@@ -135,6 +272,9 @@ class SupabaseClient:
             if last_error is not None:
                 raise last_error
 
+        return self._fallback_local_delete(table_name, identifier)
+
+    def _fallback_local_delete(self, table_name: str, identifier: str) -> bool:
         table = self.get_table(table_name)
         for index, item in enumerate(table):
             if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
@@ -158,7 +298,12 @@ class SupabaseClient:
         if self._remote_available():
             last_error: Exception | None = None
             for key in self._identifier_fields():
-                response = self.client.table(table_name).select("*").eq(key, identifier).execute()
+                try:
+                    response = self.client.table(table_name).select("*").eq(key, identifier).execute()
+                except APIError as exc:
+                    self._logger_remote_get_failure(table_name, key, exc)
+                    return self._fallback_local_get(table_name, identifier)
+
                 if getattr(response, "error", None):
                     error = RuntimeError(f"Supabase get failed for {key}: {response.error}")
                     last_error = error
@@ -172,8 +317,10 @@ class SupabaseClient:
                 raise last_error
             return None
 
+        return self._fallback_local_get(table_name, identifier)
+
+    def _fallback_local_get(self, table_name: str, identifier: str) -> dict[str, Any] | None:
         for item in self.get_table(table_name):
             if str(item.get("id") or item.get("farm_id") or item.get("cow_id")) == identifier:
                 return item
-
         return None
