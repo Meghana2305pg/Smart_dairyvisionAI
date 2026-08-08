@@ -42,6 +42,7 @@ import sys
 import warnings
 
 import joblib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -257,17 +258,52 @@ def plot_feed_lines(df_sim: pd.DataFrame):
 def plot_heatmap(df_sim: pd.DataFrame):
     """Heatmap of predicted yield over (temp × feed) grid."""
     pivot = df_sim.pivot(index="Temp_C", columns="Feed_kg", values="Pred_L")
-    fig = px.imshow(
-        pivot,
-        labels=dict(x="Feed Intake (kg/day)",
-                    y="Temperature (°C)",
-                    color="Milk Yield (L/day)"),
-        title="Predicted Milk Yield Heatmap: Temperature × Feed Grid",
-        color_continuous_scale="RdBu_r",
-        aspect="auto",
+    pivot = pivot.sort_index(axis=0).sort_index(axis=1)
+
+    temps = pivot.index.to_numpy(dtype=float)
+    feeds = pivot.columns.to_numpy(dtype=float)
+    z = pivot.to_numpy(dtype=float)
+
+    fig, ax = plt.subplots(figsize=(11, 7), dpi=220)
+    mesh = ax.pcolormesh(
+        feeds,
+        temps,
+        z,
+        shading="auto",
+        cmap="RdYlBu_r",
+        edgecolors="none",
     )
+
+    ax.set_title("Predicted Milk Yield Heatmap: Temperature × Feed Grid", fontsize=14, weight="bold")
+    ax.set_xlabel("Feed Intake (kg/day)", fontsize=11)
+    ax.set_ylabel("Temperature (°C)", fontsize=11)
+    ax.set_xticks(feeds)
+    ax.set_yticks(temps)
+    ax.tick_params(axis="both", labelsize=9)
+
+    for i in range(z.shape[0]):
+        for j in range(z.shape[1]):
+            value = z[i, j]
+            text_color = "black" if value <= np.nanmedian(z) else "white"
+            ax.text(
+                feeds[j],
+                temps[i],
+                f"{value:.2f}",
+                ha="center",
+                va="center",
+                color=text_color,
+                fontsize=7,
+                fontweight="bold",
+            )
+
+    cbar = fig.colorbar(mesh, ax=ax, fraction=0.046, pad=0.03)
+    cbar.set_label("Milk Yield (L/day)", rotation=90, labelpad=12, fontsize=10)
+    cbar.ax.tick_params(labelsize=9)
+
+    fig.tight_layout()
     path = os.path.join(OUTPUT_DIR, "simulation_heatmap.png")
-    fig.write_image(path)
+    fig.savefig(path, bbox_inches="tight")
+    plt.close(fig)
     logger.info("Saved → %s", path)
     return fig
 
