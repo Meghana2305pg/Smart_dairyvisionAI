@@ -265,6 +265,7 @@ def plot_heatmap(df_sim: pd.DataFrame):
         title="Predicted Milk Yield Heatmap: Temperature × Feed Grid",
         color_continuous_scale="RdBu_r",
         aspect="auto",
+        text_auto='.2f',
     )
     path = os.path.join(OUTPUT_DIR, "simulation_heatmap.png")
     fig.write_image(path)
