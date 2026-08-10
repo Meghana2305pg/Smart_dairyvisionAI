@@ -186,10 +186,38 @@ def plot_residuals(y_test, y_pred, model_name: str):
 
     # Histogram
     fig2 = px.histogram(
-        x=residuals, nbins=40,
+        x=residuals,
+        nbins=40,
         title=f"Residual Distribution — {model_name}",
         labels={"x": "Residual (L/day)"},
-        color_discrete_sequence=["#534AB7"]
+        color_discrete_sequence=["#534AB7"],
+        text_auto=".0f"
+    )
+
+    fig2.update_traces(
+        textposition="inside",
+        insidetextanchor="end",
+        textfont=dict(
+            size=11,
+            color="white",
+            family="Arial"
+        )
+    )
+
+    fig2.update_layout(
+        title=dict(
+            font=dict(size=24, family="Arial"),
+            x=0.5,
+            xanchor="center"
+        ),
+        xaxis=dict(
+            title=dict(font=dict(size=18)),
+            tickfont=dict(size=15)
+        ),
+        yaxis=dict(
+            title=dict(font=dict(size=18)),
+            tickfont=dict(size=15)
+        )
     )
     path2 = os.path.join(OUTPUT_DIR, "residual_histogram.png")
     fig2.write_image(path2)
@@ -236,6 +264,233 @@ def plot_cv_boxplot(df_cv: pd.DataFrame):
     logger.info("Saved → %s", path)
     return fig
 
+def plot_test_set_model_comparison(
+    X_train, X_test, y_train, y_test
+):
+    """
+    Compare all models on the exact same held-out test set
+    using MAE, RMSE, and MAPE (%).
+
+    XGBoost and Random Forest use tuned parameters from
+    outputs/tuning_results.json when available.
+    """
+
+    import json
+    from sklearn.dummy import DummyRegressor
+    from sklearn.linear_model import LinearRegression
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.tree import DecisionTreeRegressor
+    from xgboost import XGBRegressor
+
+    # ---------------------------------------------------------
+    # Load model parameters
+    # ---------------------------------------------------------
+    params = {k: dict(v) for k, v in MODEL_PARAMS.items()}
+
+    tuning_path = os.path.join(OUTPUT_DIR, "tuning_results.json")
+
+    if os.path.exists(tuning_path):
+        with open(tuning_path, "r") as f:
+            tuned = json.load(f)
+
+        if "XGBoost" in tuned:
+            params["XGBoost"] = {
+                **params.get("XGBoost", {}),
+                **tuned["XGBoost"]
+            }
+
+        if "Random Forest" in tuned:
+            params["Random Forest"] = {
+                **params.get("Random Forest", {}),
+                **tuned["Random Forest"]
+            }
+
+    # ---------------------------------------------------------
+    # Models
+    # ---------------------------------------------------------
+    models = {
+        "XGBoost": XGBRegressor(
+            **params["XGBoost"],
+            verbosity=0
+        ),
+
+        "Linear Regression": LinearRegression(),
+
+        "Random Forest": RandomForestRegressor(
+            **params["Random Forest"]
+        ),
+
+        "Naive Baseline": DummyRegressor(
+            strategy="mean"
+        ),
+
+        "Decision Tree": DecisionTreeRegressor(
+            **params["Decision Tree"]
+        ),
+    }
+
+    # ---------------------------------------------------------
+    # Evaluate every model on SAME test split
+    # ---------------------------------------------------------
+    results = []
+
+    for model_name, model in models.items():
+
+        model.fit(X_train, y_train)
+
+        pred = model.predict(X_test)
+
+        mae = mean_absolute_error(y_test, pred)
+
+        rmse = np.sqrt(
+            mean_squared_error(y_test, pred)
+        )
+
+        mape = mean_absolute_percentage_error(
+            y_test, pred
+        ) * 100
+
+        results.append({
+            "Model": model_name,
+            "MAE": mae,
+            "RMSE": rmse,
+            "MAPE_pct": mape,
+        })
+
+    results_df = pd.DataFrame(results)
+
+    # ---------------------------------------------------------
+    # Save comparison table
+    # ---------------------------------------------------------
+    csv_path = os.path.join(
+        OUTPUT_DIR,
+        "model_test_error_metrics.csv"
+    )
+
+    results_df.to_csv(
+        csv_path,
+        index=False
+    )
+
+    # ---------------------------------------------------------
+    # Create research figure
+    # ---------------------------------------------------------
+    fig, axes = plt.subplots(
+        1,
+        3,
+        figsize=(16, 6),
+        dpi=300
+    )
+
+    metrics = [
+        ("MAE", "MAE (L/day)"),
+        ("RMSE", "RMSE (L/day)"),
+        ("MAPE_pct", "MAPE (%)"),
+    ]
+
+    for ax, (metric, ylabel) in zip(axes, metrics):
+
+        bars = ax.bar(
+            results_df["Model"],
+            results_df[metric]
+        )
+
+        ax.set_title(
+            ylabel,
+            fontsize=15,
+            fontweight="bold"
+        )
+
+        ax.set_ylabel(
+            ylabel,
+            fontsize=12
+        )
+
+        ax.set_xlabel(
+            "Model",
+            fontsize=12
+        )
+
+        ax.tick_params(
+            axis="x",
+            rotation=35,
+            labelsize=10
+        )
+
+        ax.tick_params(
+            axis="y",
+            labelsize=10
+        )
+
+        # -----------------------------------------------------
+        # VALUE LABELS ON BARS
+        # -----------------------------------------------------
+        for bar, value in zip(
+            bars,
+            results_df[metric]
+        ):
+
+            if metric == "MAPE_pct":
+                label = f"{value:.2f}%"
+            else:
+                label = f"{value:.3f}"
+
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height(),
+                label,
+                ha="center",
+                va="bottom",
+                fontsize=11,
+                fontweight="bold",
+                xytext=(0, 5),
+                textcoords="offset points"
+            )
+
+        ax.grid(
+            axis="y",
+            linestyle="--",
+            alpha=0.3
+        )
+
+        ax.set_axisbelow(True)
+
+    fig.suptitle(
+        "Model Comparison on Common Test Set: Error Metrics",
+        fontsize=18,
+        fontweight="bold",
+        y=1.02
+    )
+
+    fig.tight_layout()
+
+    # ---------------------------------------------------------
+    # Save figure
+    # ---------------------------------------------------------
+    out_path = os.path.join(
+        OUTPUT_DIR,
+        "model_test_error_metrics.png"
+    )
+
+    fig.savefig(
+        out_path,
+        dpi=350,
+        bbox_inches="tight"
+    )
+
+    plt.close(fig)
+
+    logger.info(
+        "Saved test-set error metrics figure -> %s",
+        out_path
+    )
+
+    logger.info(
+        "Saved test-set error metrics table -> %s",
+        csv_path
+    )
+
+    return results_df
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -244,18 +499,31 @@ def main():
 
     # Load data (same pipeline as train.py)
     logger.info("=== Loading data ===")
-    df_clean            = load_and_prepare()
+    df_clean = load_and_prepare()
     base_temp, base_hum = fetch_weather()
-    df_full, X, y       = build_features(df_clean, base_temp, base_hum)
+    df_full, X, y = build_features(df_clean, base_temp, base_hum)
 
-    # Hold-out split — used only for diagnostic plots, not model selection
+    # Hold-out split — same test set used for model comparison
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=RANDOM_SEED
     )
 
-    # Load saved model
+    # ─────────────────────────────────────────────────────────────
+    # MODEL COMPARISON — all models evaluated on the same test set
+    # ─────────────────────────────────────────────────────────────
+    plot_test_set_model_comparison(
+        X_train,
+        X_test,
+        y_train,
+        y_test
+    )
+
+    # Load saved best model
     if not os.path.exists(MODEL_PATH):
-        logger.error("Model not found at %s — run train.py first.", MODEL_PATH)
+        logger.error(
+            "Model not found at %s — run train.py first.",
+            MODEL_PATH
+        )
         sys.exit(1)
 
     model = joblib.load(MODEL_PATH)
@@ -266,47 +534,102 @@ def main():
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
-    # 1. Metrics
+    # ─────────────────────────────────────────────────────────────
+    # 1. TEST-SET METRICS — BEST MODEL
+    # ─────────────────────────────────────────────────────────────
     metrics = compute_metrics(y_test, y_pred)
+
     logger.info("=== Hold-out test metrics ===")
+
     for k, v in metrics.items():
         logger.info("  %-12s : %.4f", k, v)
 
     metrics_df = pd.DataFrame([metrics])
-    metrics_df.to_csv(os.path.join(OUTPUT_DIR, "test_metrics.csv"), index=False)
 
-    # 2. Residual diagnostics
+    metrics_df.to_csv(
+        os.path.join(OUTPUT_DIR, "test_metrics.csv"),
+        index=False
+    )
+
+    # ─────────────────────────────────────────────────────────────
+    # 2. RESIDUAL DIAGNOSTICS
+    # ─────────────────────────────────────────────────────────────
     diag = residual_diagnostics(y_test, y_pred)
 
-    # 3. Feature importance
-    df_imp = get_feature_importance(model, X_test, y_test)
-    df_imp.to_csv(os.path.join(OUTPUT_DIR, "feature_importance.csv"))
+    # ─────────────────────────────────────────────────────────────
+    # 3. FEATURE IMPORTANCE
+    # ─────────────────────────────────────────────────────────────
+    df_imp = get_feature_importance(
+        model,
+        X_test,
+        y_test
+    )
 
-    # 4. Plots
-    plot_predicted_vs_actual(y_test, y_pred, model_name)
-    plot_residuals(y_test, y_pred, model_name)
-    plot_feature_importance(df_imp, model_name)
+    df_imp.to_csv(
+        os.path.join(OUTPUT_DIR, "feature_importance.csv")
+    )
 
+    # ─────────────────────────────────────────────────────────────
+    # 4. PLOTS — BEST MODEL
+    # ─────────────────────────────────────────────────────────────
+    plot_predicted_vs_actual(
+        y_test,
+        y_pred,
+        model_name
+    )
+
+    plot_residuals(
+        y_test,
+        y_pred,
+        model_name
+    )
+
+    plot_feature_importance(
+        df_imp,
+        model_name
+    )
+
+    # ─────────────────────────────────────────────────────────────
     # CV boxplot (if cv_results.csv exists)
-    cv_path = os.path.join(OUTPUT_DIR, "cv_results.csv")
+    # ─────────────────────────────────────────────────────────────
+    cv_path = os.path.join(
+        OUTPUT_DIR,
+        "cv_results.csv"
+    )
+
     if os.path.exists(cv_path):
         df_cv = pd.read_csv(cv_path)
         plot_cv_boxplot(df_cv)
 
-    # 5. Console summary
+    # ─────────────────────────────────────────────────────────────
+    # 5. CONSOLE SUMMARY
+    # ─────────────────────────────────────────────────────────────
     print("\n" + "=" * 60)
     print(f" EVALUATION REPORT — {model_name}")
     print("=" * 60)
+
     print(f"  R²         : {metrics['R2']:.4f}")
     print(f"  MAE        : {metrics['MAE']:.3f} L/day")
     print(f"  RMSE       : {metrics['RMSE']:.3f} L/day")
     print(f"  MAPE       : {metrics['MAPE_pct']:.2f}%")
-    print(f"  Residuals  : {'Normal' if diag['normal'] else 'Non-normal'}"
-          f"  ({diag['test']}  p={diag['p']:.4f})")
+
+    print(
+        f"  Residuals  : "
+        f"{'Normal' if diag['normal'] else 'Non-normal'}"
+        f"  ({diag['test']}  p={diag['p']:.4f})"
+    )
+
     print("=" * 60)
+
     print("\nTop 3 features by permutation importance:")
+
     for feat, row in df_imp.head(3).iterrows():
-        print(f"  {feat:<22}  ΔR²={row['Perm_mean']:.4f} ± {row['Perm_std']:.4f}")
+        print(
+            f"  {feat:<22}  "
+            f"ΔR²={row['Perm_mean']:.4f} ± "
+            f"{row['Perm_std']:.4f}"
+        )
+
     print("\nAll outputs saved to outputs/")
 
 

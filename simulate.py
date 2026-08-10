@@ -43,6 +43,7 @@ import warnings
 
 import joblib
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -254,57 +255,181 @@ def plot_feed_lines(df_sim: pd.DataFrame):
     logger.info("Saved → %s", path)
     return fig
 
-
 def plot_heatmap(df_sim: pd.DataFrame):
-    """Heatmap of predicted yield over (temp × feed) grid."""
-    pivot = df_sim.pivot(index="Temp_C", columns="Feed_kg", values="Pred_L")
-    pivot = pivot.sort_index(axis=0).sort_index(axis=1)
+    """Heatmap of predicted yield over (temperature × feed) grid."""
+
+    pivot = (
+        df_sim
+        .pivot(index="Temp_C", columns="Feed_kg", values="Pred_L")
+        .sort_index(axis=0)
+        .sort_index(axis=1)
+    )
 
     temps = pivot.index.to_numpy(dtype=float)
     feeds = pivot.columns.to_numpy(dtype=float)
     z = pivot.to_numpy(dtype=float)
 
-    fig, ax = plt.subplots(figsize=(11, 7), dpi=220)
-    mesh = ax.pcolormesh(
-        feeds,
-        temps,
-        z,
-        shading="auto",
-        cmap="RdYlBu_r",
-        edgecolors="none",
+    # ------------------------------------------------------------------
+    # Explicit cell edges.
+    # This makes sure the colored cells and annotations use exactly
+    # the same temperature × feed grid.
+    # ------------------------------------------------------------------
+    if len(feeds) > 1:
+        x_edges = np.empty(len(feeds) + 1)
+        x_edges[1:-1] = (feeds[:-1] + feeds[1:]) / 2
+        x_edges[0] = feeds[0] - (feeds[1] - feeds[0]) / 2
+        x_edges[-1] = feeds[-1] + (feeds[-1] - feeds[-2]) / 2
+    else:
+        x_edges = np.array([feeds[0] - 1, feeds[0] + 1])
+
+    if len(temps) > 1:
+        y_edges = np.empty(len(temps) + 1)
+        y_edges[1:-1] = (temps[:-1] + temps[1:]) / 2
+        y_edges[0] = temps[0] - (temps[1] - temps[0]) / 2
+        y_edges[-1] = temps[-1] + (temps[-1] - temps[-2]) / 2
+    else:
+        y_edges = np.array([temps[0] - 1, temps[0] + 1])
+
+    # ------------------------------------------------------------------
+    # Figure
+    # ------------------------------------------------------------------
+    fig, ax = plt.subplots(
+        figsize=(11.5, 6.4),
+        dpi=300
     )
 
-    ax.set_title("Predicted Milk Yield Heatmap: Temperature × Feed Grid", fontsize=14, weight="bold")
-    ax.set_xlabel("Feed Intake (kg/day)", fontsize=11)
-    ax.set_ylabel("Temperature (°C)", fontsize=11)
+    # ------------------------------------------------------------------
+    # Heatmap
+    # ------------------------------------------------------------------
+    mesh = ax.pcolormesh(
+        x_edges,
+        y_edges,
+        z,
+        shading="flat",
+        cmap="RdYlBu_r",
+        edgecolor="white",
+        linewidth=0.4
+    )
+
+    # ------------------------------------------------------------------
+    # Title and axes
+    # ------------------------------------------------------------------
+    ax.set_title(
+        "Predicted Milk Yield Heatmap: Temperature × Feed Grid",
+        fontsize=14,
+        fontweight="bold",
+        pad=12
+    )
+
+    ax.set_xlabel(
+        "Feed Intake (kg/day)",
+        fontsize=11,
+        labelpad=8
+    )
+
+    ax.set_ylabel(
+        "Temperature (°C)",
+        fontsize=11,
+        labelpad=8
+    )
+
     ax.set_xticks(feeds)
     ax.set_yticks(temps)
-    ax.tick_params(axis="both", labelsize=9)
+
+    ax.tick_params(
+        axis="both",
+        labelsize=9
+    )
+
+    # ------------------------------------------------------------------
+    # Cell-value annotations
+    #
+    # Moderate font size is intentional.
+    # The previous 18–20 pt annotations were too large and collided
+    # with neighboring cells.
+    # ------------------------------------------------------------------
+    norm = mesh.norm
+    cmap = mesh.cmap
 
     for i in range(z.shape[0]):
         for j in range(z.shape[1]):
+
             value = z[i, j]
-            text_color = "black" if value <= np.nanmedian(z) else "white"
+
+            # Determine whether black or white text has better contrast
+            rgba = cmap(norm(value))
+            luminance = (
+                0.2126 * rgba[0]
+                + 0.7152 * rgba[1]
+                + 0.0722 * rgba[2]
+            )
+
+            text_color = "white" if luminance < 0.53 else "black"
+
             ax.text(
                 feeds[j],
                 temps[i],
                 f"{value:.2f}",
                 ha="center",
                 va="center",
-                color=text_color,
-                fontsize=7,
+                fontsize=10.5,
                 fontweight="bold",
+                color=text_color,
+                clip_on=True,
+                path_effects=[
+                    pe.withStroke(
+                        linewidth=1.2,
+                        foreground=(
+                            "black"
+                            if text_color == "white"
+                            else "white"
+                        ),
+                        alpha=0.65
+                    )
+                ]
             )
 
-    cbar = fig.colorbar(mesh, ax=ax, fraction=0.046, pad=0.03)
-    cbar.set_label("Milk Yield (L/day)", rotation=90, labelpad=12, fontsize=10)
-    cbar.ax.tick_params(labelsize=9)
+    # ------------------------------------------------------------------
+    # Colorbar
+    # ------------------------------------------------------------------
+    cbar = fig.colorbar(
+        mesh,
+        ax=ax,
+        fraction=0.046,
+        pad=0.035
+    )
 
+    cbar.set_label(
+        "Milk Yield (L/day)",
+        rotation=90,
+        labelpad=10,
+        fontsize=10
+    )
+
+    cbar.ax.tick_params(
+        labelsize=9
+    )
+
+    # ------------------------------------------------------------------
+    # Final layout and save
+    # ------------------------------------------------------------------
     fig.tight_layout()
-    path = os.path.join(OUTPUT_DIR, "simulation_heatmap.png")
-    fig.savefig(path, bbox_inches="tight")
+
+    path = os.path.join(
+        OUTPUT_DIR,
+        "simulation_heatmap.png"
+    )
+
+    fig.savefig(
+        path,
+        dpi=300,
+        bbox_inches="tight"
+    )
+
     plt.close(fig)
+
     logger.info("Saved → %s", path)
+
     return fig
 
 
