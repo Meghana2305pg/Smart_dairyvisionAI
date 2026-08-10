@@ -376,15 +376,6 @@ def plot_test_set_model_comparison(
         "model_test_error_metrics.csv"
     )
 
-    outputs_csv_path = os.path.join(
-        os.path.dirname(__file__),
-        "outputs",
-        "model_test_error_metrics.csv"
-    )
-    results_df.to_csv(
-        outputs_csv_path,
-        index=False
-    )
     results_df.to_csv(
         csv_path,
         index=False
@@ -400,58 +391,80 @@ def plot_test_set_model_comparison(
     )
     os.makedirs(research_fig_dir, exist_ok=True)
 
-    plot_df = pd.read_csv(outputs_csv_path)
-
-    fig, ax = plt.subplots(
-        figsize=(8.5, 4.5),
-        dpi=300
+    outputs_fig_path = os.path.join(
+        os.path.dirname(__file__),
+        "outputs",
+        "model_test_error_metrics.png"
+    )
+    research_fig_path = os.path.join(
+        research_fig_dir,
+        "model_test_error_metrics.png"
     )
 
-    x = np.arange(len(plot_df))
-    width = 0.24
+    fig, ax = plt.subplots(
+        figsize=(7.0, 4.2),
+        dpi=350
+    )
+
+    x = np.arange(len(results_df))
+    bar_width = 0.24
 
     mae_bars = ax.bar(
-        x - width,
-        plot_df["MAE"],
-        width=width,
+        x - bar_width,
+        results_df["MAE"],
+        width=bar_width,
         label="MAE",
         color="#4C78A8",
-        edgecolor="black",
-        linewidth=0.8
+        edgecolor="none",
+        zorder=3
     )
 
     rmse_bars = ax.bar(
         x,
-        plot_df["RMSE"],
-        width=width,
+        results_df["RMSE"],
+        width=bar_width,
         label="RMSE",
         color="#F58518",
-        edgecolor="black",
-        linewidth=0.8
+        edgecolor="none",
+        zorder=3
     )
 
     mape_bars = ax.bar(
-        x + width,
-        plot_df["MAPE_pct"],
-        width=width,
+        x + bar_width,
+        results_df["MAPE_pct"],
+        width=bar_width,
         label="MAPE",
         color="#54A24B",
-        edgecolor="black",
-        linewidth=0.8
+        edgecolor="none",
+        zorder=3
     )
 
     ax.set_title(
-        "Hold-out Test-Set Error Metrics for Evaluated Milk-Yield Regression Models",
+        "Hold-out Test-Set Error Metrics",
         fontsize=14,
-        fontweight="bold"
+        fontweight="bold",
+        pad=8
     )
-    ax.set_xlabel("Model", fontsize=12)
-    ax.set_ylabel("Error metric value", fontsize=12)
+    ax.set_xlabel("Model", fontsize=11)
+    ax.set_ylabel("Metric Value", fontsize=11)
     ax.set_xticks(x)
-    ax.set_xticklabels(plot_df["Model"], rotation=25, ha="right", fontsize=11)
-    ax.tick_params(axis="y", labelsize=11)
-    ax.grid(axis="y", linestyle="--", linewidth=0.7, alpha=0.35)
+    ax.set_xticklabels(
+        results_df["Model"],
+        rotation=22,
+        ha="right",
+        fontsize=9
+    )
+    ax.tick_params(axis="y", labelsize=9)
+    ax.tick_params(axis="x", labelsize=9)
+
+    ax.set_ylim(0, 14)
+    ax.set_xlim(-0.6, len(results_df) - 0.4)
+    ax.grid(axis="y", linestyle="--", linewidth=0.6, alpha=0.25)
     ax.set_axisbelow(True)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.patch.set_visible(False)
+    fig.patch.set_facecolor("white")
 
     def annotate_bars(bars, formatter):
         for bar in bars:
@@ -463,7 +476,7 @@ def plot_test_set_model_comparison(
                 textcoords="offset points",
                 ha="center",
                 va="bottom",
-                fontsize=9,
+                fontsize=8,
                 fontweight="bold"
             )
 
@@ -471,40 +484,39 @@ def plot_test_set_model_comparison(
     annotate_bars(rmse_bars, lambda value: f"{value:.3f}")
     annotate_bars(mape_bars, lambda value: f"{value:.2f}%")
 
-    ax.legend(loc="upper left", fontsize=10, frameon=True)
-
-    fig.tight_layout()
-
-    out_path = os.path.join(
-        research_fig_dir,
-        "model_test_error_metrics.png"
-    )
-    fig.savefig(
-        out_path,
-        dpi=350,
-        bbox_inches="tight"
+    ax.legend(
+        [mae_bars, rmse_bars, mape_bars],
+        ["MAE", "RMSE", "MAPE"],
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.03),
+        ncol=3,
+        fontsize=9,
+        frameon=False,
+        columnspacing=0.8,
+        handletextpad=0.4
     )
 
-    outputs_fig_path = os.path.join(
-        os.path.dirname(__file__),
-        "outputs",
-        "model_test_error_metrics.png"
-    )
+    fig.tight_layout(pad=0.75)
+
     fig.savefig(
         outputs_fig_path,
         dpi=350,
         bbox_inches="tight"
     )
-
+    fig.savefig(
+        research_fig_path,
+        dpi=350,
+        bbox_inches="tight"
+    )
     plt.close(fig)
 
     logger.info(
         "Saved publication figure -> %s",
-        out_path
+        outputs_fig_path
     )
     logger.info(
-        "Saved figure to outputs -> %s",
-        outputs_fig_path
+        "Saved publication figure -> %s",
+        research_fig_path
     )
     logger.info(
         "Saved research table -> %s",

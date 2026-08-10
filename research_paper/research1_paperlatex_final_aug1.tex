@@ -389,10 +389,13 @@
 			}
 		\end{table}
 		
-		\begin{figure}[htbp]
+		\begin{figure}[t]
 			\centering
-			\includegraphics[width=0.95\linewidth]{../outputs/model_test_error_metrics.png}
-		\caption{Comparison of hold-out test-set error metrics for the evaluated milk-yield regression models.}
+			\includegraphics[width=\columnwidth]{../outputs/model_test_error_metrics.png}
+			\caption{Hold-out test-set error metrics for the evaluated milk-yield regression models.}
+			\label{fig:model_test_error_metrics}
+		\end{figure}
+		
 		On the hold-out test set, the final XGBoost model achieved MAE $= 2.035$ L/day, RMSE $= 2.575$ L/day, $R^2 = 0.188$, and MAPE $= 9.86\%$. These values are the current pipeline’s validated results and are the evidence retained for Paper 1.
 		
 		\begin{figure}[htbp]
