@@ -24,9 +24,11 @@ import joblib
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from scipy import stats
 from sklearn.inspection import permutation_importance
+from config import MODEL_PARAMS
 from sklearn.metrics import (
     mean_absolute_error, mean_absolute_percentage_error,
     mean_squared_error, r2_score
@@ -362,8 +364,15 @@ def plot_test_set_model_comparison(
     # ---------------------------------------------------------
     # Save comparison table
     # ---------------------------------------------------------
+    research_table_dir = os.path.join(
+        os.path.dirname(__file__),
+        "research_outputs",
+        "tables"
+    )
+    os.makedirs(research_table_dir, exist_ok=True)
+
     csv_path = os.path.join(
-        OUTPUT_DIR,
+        research_table_dir,
         "model_test_error_metrics.csv"
     )
 
@@ -373,102 +382,107 @@ def plot_test_set_model_comparison(
     )
 
     # ---------------------------------------------------------
-    # Create research figure
+    # Create a single publication-quality figure
     # ---------------------------------------------------------
-    fig, axes = plt.subplots(
-        1,
-        3,
-        figsize=(16, 6),
+    research_fig_dir = os.path.join(
+        os.path.dirname(__file__),
+        "research_outputs",
+        "figures"
+    )
+    os.makedirs(research_fig_dir, exist_ok=True)
+
+    fig, ax1 = plt.subplots(
+        figsize=(12, 7),
         dpi=300
     )
 
-    metrics = [
-        ("MAE", "MAE (L/day)"),
-        ("RMSE", "RMSE (L/day)"),
-        ("MAPE_pct", "MAPE (%)"),
-    ]
+    x = np.arange(len(results_df))
+    bar_width = 0.24
 
-    for ax, (metric, ylabel) in zip(axes, metrics):
+    mae_bars = ax1.bar(
+        x - bar_width,
+        results_df["MAE"],
+        width=bar_width,
+        label="MAE",
+        color="#4C78A8",
+        edgecolor="black",
+        linewidth=0.8
+    )
 
-        bars = ax.bar(
-            results_df["Model"],
-            results_df[metric]
-        )
+    rmse_bars = ax1.bar(
+        x,
+        results_df["RMSE"],
+        width=bar_width,
+        label="RMSE",
+        color="#F58518",
+        edgecolor="black",
+        linewidth=0.8
+    )
 
-        ax.set_title(
-            ylabel,
-            fontsize=15,
-            fontweight="bold"
-        )
+    ax1.set_title(
+        "Test-Set Error Metrics Across Models",
+        fontsize=18,
+        fontweight="bold"
+    )
+    ax1.set_xlabel("Model", fontsize=13)
+    ax1.set_ylabel("Error (L/day)", fontsize=13)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(results_df["Model"], rotation=30, ha="right", fontsize=11)
+    ax1.tick_params(axis="y", labelsize=11)
+    ax1.grid(axis="y", linestyle="--", linewidth=0.7, alpha=0.35)
+    ax1.set_axisbelow(True)
 
-        ax.set_ylabel(
-            ylabel,
-            fontsize=12
-        )
+    ax2 = ax1.twinx()
+    mape_bars = ax2.bar(
+        x + bar_width,
+        results_df["MAPE_pct"],
+        width=bar_width,
+        label="MAPE",
+        color="#54A24B",
+        edgecolor="black",
+        linewidth=0.8
+    )
+    ax2.set_ylabel("MAPE (%)", fontsize=13)
+    ax2.tick_params(axis="y", labelsize=11)
 
-        ax.set_xlabel(
-            "Model",
-            fontsize=12
-        )
-
-        ax.tick_params(
-            axis="x",
-            rotation=35,
-            labelsize=10
-        )
-
-        ax.tick_params(
-            axis="y",
-            labelsize=10
-        )
-
-        # -----------------------------------------------------
-        # VALUE LABELS ON BARS
-        # -----------------------------------------------------
-        for bar, value in zip(
-            bars,
-            results_df[metric]
-        ):
-
-            if metric == "MAPE_pct":
-                label = f"{value:.2f}%"
+    for bars, formatter in [
+        (mae_bars, lambda value: f"{value:.3f}"),
+        (rmse_bars, lambda value: f"{value:.3f}"),
+        (mape_bars, lambda value: f"{value:.2f}%"),
+    ]:
+        for bar, value in zip(bars, bars.datavalues if hasattr(bars, 'datavalues') else [bar.get_height() for bar in bars]):
+            if isinstance(value, (int, float)):
+                label = formatter(value)
             else:
-                label = f"{value:.3f}"
-
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                bar.get_height(),
+                label = formatter(float(value))
+            ax1.annotate(
                 label,
+                (bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                xytext=(0, 5),
+                textcoords="offset points",
                 ha="center",
                 va="bottom",
-                fontsize=11,
-                fontweight="bold",
-                xytext=(0, 5),
-                textcoords="offset points"
+                fontsize=10,
+                fontweight="bold"
             )
 
-        ax.grid(
-            axis="y",
-            linestyle="--",
-            alpha=0.3
+    if hasattr(ax2, "get_legend_handles_labels"):
+        legend_handles, legend_labels = ax1.get_legend_handles_labels()
+        legend_handles2, legend_labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(
+            legend_handles + legend_handles2,
+            legend_labels + legend_labels2,
+            loc="upper left",
+            fontsize=11,
+            frameon=True
         )
-
-        ax.set_axisbelow(True)
-
-    fig.suptitle(
-        "Model Comparison on Common Test Set: Error Metrics",
-        fontsize=18,
-        fontweight="bold",
-        y=1.02
-    )
+    else:
+        ax1.legend(loc="upper left", fontsize=11)
 
     fig.tight_layout()
 
-    # ---------------------------------------------------------
-    # Save figure
-    # ---------------------------------------------------------
     out_path = os.path.join(
-        OUTPUT_DIR,
+        research_fig_dir,
         "model_test_error_metrics.png"
     )
 
@@ -481,12 +495,12 @@ def plot_test_set_model_comparison(
     plt.close(fig)
 
     logger.info(
-        "Saved test-set error metrics figure -> %s",
+        "Saved publication figure -> %s",
         out_path
     )
 
     logger.info(
-        "Saved test-set error metrics table -> %s",
+        "Saved research table -> %s",
         csv_path
     )
 
