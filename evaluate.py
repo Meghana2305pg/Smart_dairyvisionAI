@@ -376,13 +376,22 @@ def plot_test_set_model_comparison(
         "model_test_error_metrics.csv"
     )
 
+    outputs_csv_path = os.path.join(
+        os.path.dirname(__file__),
+        "outputs",
+        "model_test_error_metrics.csv"
+    )
+    results_df.to_csv(
+        outputs_csv_path,
+        index=False
+    )
     results_df.to_csv(
         csv_path,
         index=False
     )
 
     # ---------------------------------------------------------
-    # Create a single publication-quality figure
+    # Create a single publication-quality grouped bar chart
     # ---------------------------------------------------------
     research_fig_dir = os.path.join(
         os.path.dirname(__file__),
@@ -391,93 +400,78 @@ def plot_test_set_model_comparison(
     )
     os.makedirs(research_fig_dir, exist_ok=True)
 
-    fig, ax1 = plt.subplots(
-        figsize=(12, 7),
+    plot_df = pd.read_csv(outputs_csv_path)
+
+    fig, ax = plt.subplots(
+        figsize=(8.5, 4.5),
         dpi=300
     )
 
-    x = np.arange(len(results_df))
-    bar_width = 0.24
+    x = np.arange(len(plot_df))
+    width = 0.24
 
-    mae_bars = ax1.bar(
-        x - bar_width,
-        results_df["MAE"],
-        width=bar_width,
+    mae_bars = ax.bar(
+        x - width,
+        plot_df["MAE"],
+        width=width,
         label="MAE",
         color="#4C78A8",
         edgecolor="black",
         linewidth=0.8
     )
 
-    rmse_bars = ax1.bar(
+    rmse_bars = ax.bar(
         x,
-        results_df["RMSE"],
-        width=bar_width,
+        plot_df["RMSE"],
+        width=width,
         label="RMSE",
         color="#F58518",
         edgecolor="black",
         linewidth=0.8
     )
 
-    ax1.set_title(
-        "Test-Set Error Metrics Across Models",
-        fontsize=18,
-        fontweight="bold"
-    )
-    ax1.set_xlabel("Model", fontsize=13)
-    ax1.set_ylabel("Error (L/day)", fontsize=13)
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(results_df["Model"], rotation=30, ha="right", fontsize=11)
-    ax1.tick_params(axis="y", labelsize=11)
-    ax1.grid(axis="y", linestyle="--", linewidth=0.7, alpha=0.35)
-    ax1.set_axisbelow(True)
-
-    ax2 = ax1.twinx()
-    mape_bars = ax2.bar(
-        x + bar_width,
-        results_df["MAPE_pct"],
-        width=bar_width,
+    mape_bars = ax.bar(
+        x + width,
+        plot_df["MAPE_pct"],
+        width=width,
         label="MAPE",
         color="#54A24B",
         edgecolor="black",
         linewidth=0.8
     )
-    ax2.set_ylabel("MAPE (%)", fontsize=13)
-    ax2.tick_params(axis="y", labelsize=11)
 
-    for bars, formatter in [
-        (mae_bars, lambda value: f"{value:.3f}"),
-        (rmse_bars, lambda value: f"{value:.3f}"),
-        (mape_bars, lambda value: f"{value:.2f}%"),
-    ]:
-        for bar, value in zip(bars, bars.datavalues if hasattr(bars, 'datavalues') else [bar.get_height() for bar in bars]):
-            if isinstance(value, (int, float)):
-                label = formatter(value)
-            else:
-                label = formatter(float(value))
-            ax1.annotate(
-                label,
-                (bar.get_x() + bar.get_width() / 2, bar.get_height()),
-                xytext=(0, 5),
+    ax.set_title(
+        "Hold-out Test-Set Error Metrics for Evaluated Milk-Yield Regression Models",
+        fontsize=14,
+        fontweight="bold"
+    )
+    ax.set_xlabel("Model", fontsize=12)
+    ax.set_ylabel("Error metric value", fontsize=12)
+    ax.set_xticks(x)
+    ax.set_xticklabels(plot_df["Model"], rotation=25, ha="right", fontsize=11)
+    ax.tick_params(axis="y", labelsize=11)
+    ax.grid(axis="y", linestyle="--", linewidth=0.7, alpha=0.35)
+    ax.set_axisbelow(True)
+
+    def annotate_bars(bars, formatter):
+        for bar in bars:
+            height = bar.get_height()
+            ax.annotate(
+                formatter(height),
+                xy=(bar.get_x() + bar.get_width() / 2, height),
+                xytext=(0, 4),
                 textcoords="offset points",
                 ha="center",
                 va="bottom",
-                fontsize=10,
+                fontsize=9,
                 fontweight="bold"
             )
 
-    if hasattr(ax2, "get_legend_handles_labels"):
-        legend_handles, legend_labels = ax1.get_legend_handles_labels()
-        legend_handles2, legend_labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(
-            legend_handles + legend_handles2,
-            legend_labels + legend_labels2,
-            loc="upper left",
-            fontsize=11,
-            frameon=True
-        )
-    else:
-        ax1.legend(loc="upper left", fontsize=11)
+    annotate_bars(mae_bars, lambda value: f"{value:.3f}")
+    annotate_bars(rmse_bars, lambda value: f"{value:.3f}")
+    annotate_bars(mape_bars, lambda value: f"{value:.2f}%")
+
+    ax.legend(loc="upper left", fontsize=10, frameon=True)
 
     fig.tight_layout()
 
@@ -485,9 +479,19 @@ def plot_test_set_model_comparison(
         research_fig_dir,
         "model_test_error_metrics.png"
     )
-
     fig.savefig(
         out_path,
+        dpi=350,
+        bbox_inches="tight"
+    )
+
+    outputs_fig_path = os.path.join(
+        os.path.dirname(__file__),
+        "outputs",
+        "model_test_error_metrics.png"
+    )
+    fig.savefig(
+        outputs_fig_path,
         dpi=350,
         bbox_inches="tight"
     )
@@ -498,7 +502,10 @@ def plot_test_set_model_comparison(
         "Saved publication figure -> %s",
         out_path
     )
-
+    logger.info(
+        "Saved figure to outputs -> %s",
+        outputs_fig_path
+    )
     logger.info(
         "Saved research table -> %s",
         csv_path

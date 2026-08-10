@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1786360849.42891 "/Users/sanjana/Smart_dairyvisionAI/research_paper/research1_paperlatex_final_aug1.tex" "research1_paperlatex_final_aug1.pdf" "research1_paperlatex_final_aug1" 1786360852.12397 0
+["pdflatex"] 1786362485.47892 "/Users/sanjana/Smart_dairyvisionAI/research_paper/research1_paperlatex_final_aug1.tex" "research1_paperlatex_final_aug1.pdf" "research1_paperlatex_final_aug1" 1786362488.37715 0
   "../outputs/cv_r2_boxplot.png" 1786356386.29847 30246 e8a4b2fc8370dc4c497dfbffbe65628e ""
   "../outputs/feature_importance.png" 1786356383.46952 45340 e570434cd3396f3dd17325cc68729a6c ""
   "../outputs/model_test_error_metrics.png" 1786355580.41962 392467 63cee076772ec000f109418ad9ac2f26 ""
@@ -8,7 +8,8 @@
   "../outputs/residuals_vs_fitted.png" 1786356378.22372 69220 7a60cf1de9db027a276305c879622537 ""
   "../outputs/shap/shap_summary.png" 1786182934.84103 283839 3c1c16917cc955c7f19cf94f14e5ff34 ""
   "../outputs/thi_histogram.png" 1785504715.01492 210617 a04c9d5e57f1fc80f886d618ceb6f501 ""
-  "/Users/sanjana/Smart_dairyvisionAI/research_paper/research1_paperlatex_final_aug1.tex" 1786360846.49805 33156 c2a6b0d921c89ab9072e23ae48b43f22 ""
+  "/Users/sanjana/Smart_dairyvisionAI/research_paper/research1_paperlatex_final_aug1.tex" 1786362482.14082 34532 08ad9146cb6a98b897ae87cc60a90918 ""
+  "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf-pc.enc" 1600636029 2211 c42193888177bc8f86d55dca129a9358 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf.enc" 1422827479 2083 60e36f8eac802fcaf19eabe2633b406e ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -16,6 +17,7 @@
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/adobe/times/ptmbi7t.tfm" 1136768653 2228 e564491c42a4540b5ebb710a75ff306c ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/adobe/times/ptmr7t.tfm" 1136768653 2124 2601a75482e9426d33db523edf23570a ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/adobe/times/ptmri7t.tfm" 1136768653 2288 f478fc8fed18759effb59f3dad7f3084 ""
+  "/usr/local/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1136768653 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/newtx/NewTXBMI.tfm" 1572128992 1392 a17207635f5e84ce99b1f3136dfb1ea1 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/newtx/NewTXMI.tfm" 1572128992 1408 ef71a9098da4d5a1a85b5920860b6731 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/newtx/NewTXMI7.tfm" 1572128992 1556 4df22ac3e5cc03ff0898d83d8817c6cf ""
@@ -46,6 +48,7 @@
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/newtx/txmiaSTbb.tfm" 1569879884 920 99acdf374993fd46fd345f9cac168080 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/newtx/txmiaX.tfm" 1736550153 1708 e6ab41b8c6f33e297f8c7977f1424a40 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/newtx/txsys.tfm" 1724614892 1656 68b5079c64f1cefe2cf442b6a60cf2fd ""
+  "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb" 1215737283 138258 6525c253f16cededa14c7fd0da7f67b2 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/newtx/NewTXMI.pfb" 1724614892 32409 aee30089ce2d804d7327a2f8ccff0462 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/newtx/NewTXMI7.pfb" 1572128992 34733 61fa3c01fac511e451670c1b454ff211 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/newtx/txexs.pfb" 1621283831 33424 f912ebe54685d0a65d3c046e3d517e38 ""
@@ -226,9 +229,9 @@
   "/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1747242690 5467155 19efa205003f9ecad95fbbaa6ff24da1 ""
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1747242623 3345737 0c06ca298ccb55a851ed2d78b4b6e74f ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
-  "research1_paperlatex_final_aug1.aux" 1786360851.99539 8688 bb64d0e2ba9bf3f722c50e5204f820ff "pdflatex"
-  "research1_paperlatex_final_aug1.out" 1786360851.9965 5692 696feb618ec4c61a1dce650735f11865 "pdflatex"
-  "research1_paperlatex_final_aug1.tex" 1786360846.49805 33156 c2a6b0d921c89ab9072e23ae48b43f22 ""
+  "research1_paperlatex_final_aug1.aux" 1786362488.252 8971 b5151889c7d610d7eda82a4a9b4aaeb5 "pdflatex"
+  "research1_paperlatex_final_aug1.out" 1786362488.25285 5914 cdc779bfe713966d684910ae21165768 "pdflatex"
+  "research1_paperlatex_final_aug1.tex" 1786362482.14082 34532 08ad9146cb6a98b897ae87cc60a90918 ""
   (generated)
   "research1_paperlatex_final_aug1.aux"
   "research1_paperlatex_final_aug1.log"
