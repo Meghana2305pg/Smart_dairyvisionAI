@@ -1,41 +1,43 @@
-2026-08-10 18:00:20,585  INFO      === Loading data ===
-2026-08-10 18:00:20,593  INFO      Disease dataset  : 3000 rows × 6 cols
-2026-08-10 18:00:20,593  INFO      Yield dataset    : 3000 rows × 4 cols
-2026-08-10 18:00:20,597  INFO      After inner join : 3000 rows × 9 cols
-2026-08-10 18:00:20,599  INFO      Health label: 35.2% diseased
-2026-08-10 18:00:20,603  INFO      After clean      : 3000 rows (dropped 0)
-2026-08-10 18:00:20,604  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
-2026-08-10 18:00:21,625  INFO      [Weather] OK  — Temp: 22.7°C  Humidity: 90.0%
-2026-08-10 18:00:21,630  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
-2026-08-10 18:00:21,633  INFO      THI range        : 33.4 – 94.8  (mean 58.3)
-2026-08-10 18:00:21,635  INFO      THI stress dist  :
+2026-08-10 22:10:58,260  INFO      === Loading data ===
+2026-08-10 22:10:58,270  INFO      Disease dataset  : 3000 rows × 6 cols
+2026-08-10 22:10:58,270  INFO      Yield dataset    : 3000 rows × 4 cols
+2026-08-10 22:10:58,273  INFO      After inner join : 3000 rows × 9 cols
+2026-08-10 22:10:58,274  INFO      Health label: 35.2% diseased
+2026-08-10 22:10:58,277  INFO      After clean      : 3000 rows (dropped 0)
+2026-08-10 22:10:58,278  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
+2026-08-10 22:10:59,542  INFO      [Weather] OK  — Temp: 22.0°C  Humidity: 93.0%
+2026-08-10 22:10:59,618  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
+2026-08-10 22:10:59,633  INFO      THI range        : 33.4 – 94.8  (mean 58.3)
+2026-08-10 22:10:59,652  INFO      THI stress dist  :
 thi
 No Stress    1701
 Mild          708
 Moderate      392
 Severe        158
 Emergency      41
-2026-08-10 18:00:21,635  INFO      
+2026-08-10 22:10:59,652  INFO      
 New engineered features created:
-2026-08-10 18:00:21,636  INFO        feed_per_weight          : mean=0.0430  std=0.0120
-2026-08-10 18:00:21,636  INFO        temp_humidity            : mean=2488.3343  std=738.2167
-2026-08-10 18:00:21,636  INFO        thi_squared              : mean=3566.9015  std=1602.4610
-2026-08-10 18:00:21,636  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
-2026-08-10 18:00:21,636  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
-2026-08-10 18:00:21,637  INFO      Feature matrix   : 3000 rows × 13 cols
-2026-08-10 18:00:21,637  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
-2026-08-10 18:00:21,672  INFO      Engineered dataset saved -> /Users/sanjana/Smart_dairyvisionAI/outputs/engineered_dataset.csv
-2026-08-10 18:00:23,420  INFO      Saved publication figure -> /Users/sanjana/Smart_dairyvisionAI/outputs/model_test_error_metrics.png
-2026-08-10 18:00:23,421  INFO      Saved publication figure -> /Users/sanjana/Smart_dairyvisionAI/research_outputs/figures/model_test_error_metrics.png
-2026-08-10 18:00:23,421  INFO      Saved research table -> /Users/sanjana/Smart_dairyvisionAI/research_outputs/tables/model_test_error_metrics.csv
-2026-08-10 18:00:23,424  INFO      Loaded model: XGBRegressor
-2026-08-10 18:00:23,678  INFO      === Hold-out test metrics ===
-2026-08-10 18:00:23,679  INFO        MAE          : 2.0348
-2026-08-10 18:00:23,679  INFO        RMSE         : 2.5746
-2026-08-10 18:00:23,679  INFO        R2           : 0.1880
-2026-08-10 18:00:23,679  INFO        MAPE_pct     : 9.8641
-2026-08-10 18:00:23,680  INFO      Residual normality (Shapiro-Wilk): stat=0.9962  p=0.1574  → Normal (p > 0.05)
-2026-08-10 18:00:26,961  INFO      Feature importance (permutation):
+2026-08-10 22:10:59,655  INFO        feed_per_weight          : mean=0.0430  std=0.0120
+2026-08-10 22:10:59,664  INFO        temp_humidity            : mean=2488.3343  std=738.2167
+2026-08-10 22:10:59,684  INFO        thi_squared              : mean=3566.9015  std=1602.4610
+2026-08-10 22:10:59,686  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
+2026-08-10 22:10:59,688  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
+2026-08-10 22:10:59,689  INFO      Feature matrix   : 3000 rows × 13 cols
+2026-08-10 22:10:59,690  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
+2026-08-10 22:10:59,743  INFO      Engineered dataset saved -> /Users/sanjana/Smart_dairyvisionAI/outputs/engineered_dataset.csv
+2026-08-10 22:11:01,663  INFO      Saved publication figure -> /Users/sanjana/Smart_dairyvisionAI/outputs/model_test_error_metrics.png
+2026-08-10 22:11:01,663  INFO      Saved publication figure -> /Users/sanjana/Smart_dairyvisionAI/research_outputs/figures/model_test_error_metrics.png
+2026-08-10 22:11:01,663  INFO      Saved research table -> /Users/sanjana/Smart_dairyvisionAI/research_outputs/tables/model_test_error_metrics.csv
+2026-08-10 22:11:01,938  INFO      Saved model comparison R2 figure -> /Users/sanjana/Smart_dairyvisionAI/outputs/model_comparison_r2.png
+2026-08-10 22:11:01,938  INFO      Saved model comparison R2 figure -> /Users/sanjana/Smart_dairyvisionAI/research_outputs/figures/model_comparison_r2.png
+2026-08-10 22:11:01,940  INFO      Loaded model: XGBRegressor
+2026-08-10 22:11:02,190  INFO      === Hold-out test metrics ===
+2026-08-10 22:11:02,190  INFO        MAE          : 2.0348
+2026-08-10 22:11:02,190  INFO        RMSE         : 2.5746
+2026-08-10 22:11:02,190  INFO        R2           : 0.1880
+2026-08-10 22:11:02,190  INFO        MAPE_pct     : 9.8641
+2026-08-10 22:11:02,192  INFO      Residual normality (Shapiro-Wilk): stat=0.9962  p=0.1574  → Normal (p > 0.05)
+2026-08-10 22:11:05,958  INFO      Feature importance (permutation):
                       MDI_importance  Perm_mean  Perm_std
 weight                      0.282482   0.252968  0.024838
 age                         0.152431   0.046197  0.013011
@@ -50,139 +52,139 @@ thi                         0.066325  -0.000714  0.000814
 temperature                 0.047908  -0.001151  0.000661
 humidity                    0.057567  -0.001906  0.000679
 temp_humidity               0.054378  -0.002176  0.000478
-2026-08-10 18:00:27,073  INFO      Chromium init'ed with kwargs {}
-2026-08-10 18:00:27,088  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 18:00:27,088  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpwfxq6kmb.
-2026-08-10 18:00:27,088  INFO      Opening browser.
-2026-08-10 18:00:27,089  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp8ipe3y5n.
-2026-08-10 18:00:27,089  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp8ipe3y5n
-2026-08-10 18:00:31,357  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpwfxq6kmb/index.html
-2026-08-10 18:00:32,944  INFO      Getting tab from queue (has 1)
-2026-08-10 18:00:32,944  INFO      Got DE4D
-2026-08-10 18:00:33,067  INFO      Reloading tab DE4D before return.
-2026-08-10 18:00:33,193  INFO      Putting tab DE4D back (queue size: 0).
-2026-08-10 18:00:33,193  INFO      Waiting for all cleanups to finish.
-2026-08-10 18:00:33,193  INFO      Exiting Kaleido.
-2026-08-10 18:00:33,194  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:33,194  INFO      shutil.rmtree worked.
-2026-08-10 18:00:33,194  INFO      Closing browser.
-2026-08-10 18:00:33,196  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:33,196  INFO      shutil.rmtree worked.
-2026-08-10 18:00:33,196  INFO      Closing browser.
-2026-08-10 18:00:33,196  INFO      Cancelling tasks.
-2026-08-10 18:00:33,196  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:33,339  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:33,340  INFO      shutil.rmtree worked.
-2026-08-10 18:00:33,340  INFO      Cancelling tasks.
-2026-08-10 18:00:33,340  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:33,341  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/predicted_vs_actual.png
-2026-08-10 18:00:33,351  INFO      Chromium init'ed with kwargs {}
-2026-08-10 18:00:33,351  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 18:00:33,352  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp5vitvbn6.
-2026-08-10 18:00:33,352  INFO      Opening browser.
-2026-08-10 18:00:33,352  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp160ykrxj.
-2026-08-10 18:00:33,352  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp160ykrxj
-2026-08-10 18:00:34,505  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp5vitvbn6/index.html
-2026-08-10 18:00:36,123  INFO      Getting tab from queue (has 1)
-2026-08-10 18:00:36,123  INFO      Got 120A
-2026-08-10 18:00:36,179  INFO      Reloading tab 120A before return.
-2026-08-10 18:00:36,308  INFO      Putting tab 120A back (queue size: 0).
-2026-08-10 18:00:36,308  INFO      Waiting for all cleanups to finish.
-2026-08-10 18:00:36,308  INFO      Exiting Kaleido.
-2026-08-10 18:00:36,308  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:36,308  INFO      shutil.rmtree worked.
-2026-08-10 18:00:36,308  INFO      Closing browser.
-2026-08-10 18:00:36,311  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:36,311  INFO      shutil.rmtree worked.
-2026-08-10 18:00:36,311  INFO      Closing browser.
-2026-08-10 18:00:36,311  INFO      Cancelling tasks.
-2026-08-10 18:00:36,311  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:36,451  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:36,451  INFO      shutil.rmtree worked.
-2026-08-10 18:00:36,451  INFO      Cancelling tasks.
-2026-08-10 18:00:36,451  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:36,452  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/residuals_vs_fitted.png
-2026-08-10 18:00:36,454  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:36,454  INFO      shutil.rmtree worked.
-2026-08-10 18:00:36,566  INFO      Chromium init'ed with kwargs {}
-2026-08-10 18:00:36,566  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 18:00:36,567  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpe8d3aytu.
-2026-08-10 18:00:36,567  INFO      Opening browser.
-2026-08-10 18:00:36,567  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpl2gu4e46.
-2026-08-10 18:00:36,567  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpl2gu4e46
-2026-08-10 18:00:37,671  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpe8d3aytu/index.html
-2026-08-10 18:00:39,242  INFO      Getting tab from queue (has 1)
-2026-08-10 18:00:39,251  INFO      Got 2E1E
-2026-08-10 18:00:39,340  INFO      Reloading tab 2E1E before return.
-2026-08-10 18:00:39,513  INFO      Putting tab 2E1E back (queue size: 0).
-2026-08-10 18:00:39,516  INFO      Waiting for all cleanups to finish.
-2026-08-10 18:00:39,516  INFO      Exiting Kaleido.
-2026-08-10 18:00:39,534  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:39,534  INFO      shutil.rmtree worked.
-2026-08-10 18:00:39,534  INFO      Closing browser.
-2026-08-10 18:00:39,536  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:39,536  INFO      shutil.rmtree worked.
-2026-08-10 18:00:39,536  INFO      Closing browser.
-2026-08-10 18:00:39,536  INFO      Cancelling tasks.
-2026-08-10 18:00:39,536  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:39,907  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:39,907  INFO      shutil.rmtree worked.
-2026-08-10 18:00:39,908  INFO      Cancelling tasks.
-2026-08-10 18:00:39,908  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:39,909  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/residual_histogram.png
-2026-08-10 18:00:39,935  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:39,936  INFO      shutil.rmtree worked.
-2026-08-10 18:00:40,058  INFO      Chromium init'ed with kwargs {}
-2026-08-10 18:00:40,100  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 18:00:40,103  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp4evtefmr.
-2026-08-10 18:00:40,104  INFO      Opening browser.
-2026-08-10 18:00:40,105  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmplrw_oeqm.
-2026-08-10 18:00:40,105  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmplrw_oeqm
-2026-08-10 18:00:41,946  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp4evtefmr/index.html
-2026-08-10 18:00:43,199  INFO      Getting tab from queue (has 1)
-2026-08-10 18:00:43,199  INFO      Got 996C
-2026-08-10 18:00:43,253  INFO      Reloading tab 996C before return.
-2026-08-10 18:00:43,384  INFO      Putting tab 996C back (queue size: 0).
-2026-08-10 18:00:43,385  INFO      Waiting for all cleanups to finish.
-2026-08-10 18:00:43,385  INFO      Exiting Kaleido.
-2026-08-10 18:00:43,386  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:43,387  INFO      shutil.rmtree worked.
-2026-08-10 18:00:43,387  INFO      Closing browser.
-2026-08-10 18:00:43,389  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:43,389  INFO      shutil.rmtree worked.
-2026-08-10 18:00:43,389  INFO      Closing browser.
-2026-08-10 18:00:43,389  INFO      Cancelling tasks.
-2026-08-10 18:00:43,389  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:43,522  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:43,522  INFO      shutil.rmtree worked.
-2026-08-10 18:00:43,522  INFO      Cancelling tasks.
-2026-08-10 18:00:43,522  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:43,523  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/feature_importance.png
-2026-08-10 18:00:43,548  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:43,549  INFO      shutil.rmtree worked.
-2026-08-10 18:00:43,566  INFO      Chromium init'ed with kwargs {}
-2026-08-10 18:00:43,567  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 18:00:43,568  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpiizcz445.
-2026-08-10 18:00:43,568  INFO      Opening browser.
-2026-08-10 18:00:43,568  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpwlln1jsk.
-2026-08-10 18:00:43,568  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpwlln1jsk
-2026-08-10 18:00:44,751  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpiizcz445/index.html
-2026-08-10 18:00:45,969  INFO      Getting tab from queue (has 1)
-2026-08-10 18:00:45,969  INFO      Got BBBA
-2026-08-10 18:00:46,006  INFO      Reloading tab BBBA before return.
-2026-08-10 18:00:46,134  INFO      Putting tab BBBA back (queue size: 0).
-2026-08-10 18:00:46,134  INFO      Waiting for all cleanups to finish.
-2026-08-10 18:00:46,134  INFO      Exiting Kaleido.
-2026-08-10 18:00:46,135  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:46,135  INFO      shutil.rmtree worked.
-2026-08-10 18:00:46,135  INFO      Closing browser.
-2026-08-10 18:00:46,136  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:46,137  INFO      shutil.rmtree worked.
-2026-08-10 18:00:46,137  INFO      Closing browser.
-2026-08-10 18:00:46,137  INFO      Cancelling tasks.
-2026-08-10 18:00:46,137  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:46,225  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 18:00:46,225  INFO      shutil.rmtree worked.
-2026-08-10 18:00:46,225  INFO      Cancelling tasks.
-2026-08-10 18:00:46,225  INFO      Exiting Kaleido/Choreo.
-2026-08-10 18:00:46,226  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/cv_r2_boxplot.png
+2026-08-10 22:11:06,060  INFO      Chromium init'ed with kwargs {}
+2026-08-10 22:11:06,083  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+2026-08-10 22:11:06,084  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpaw3w76g3.
+2026-08-10 22:11:06,084  INFO      Opening browser.
+2026-08-10 22:11:06,085  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp5jhc5cwe.
+2026-08-10 22:11:06,085  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp5jhc5cwe
+2026-08-10 22:11:09,387  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpaw3w76g3/index.html
+2026-08-10 22:11:10,464  INFO      Getting tab from queue (has 1)
+2026-08-10 22:11:10,464  INFO      Got FF86
+2026-08-10 22:11:10,559  INFO      Reloading tab FF86 before return.
+2026-08-10 22:11:10,683  INFO      Putting tab FF86 back (queue size: 0).
+2026-08-10 22:11:10,683  INFO      Waiting for all cleanups to finish.
+2026-08-10 22:11:10,683  INFO      Exiting Kaleido.
+2026-08-10 22:11:10,684  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:10,684  INFO      shutil.rmtree worked.
+2026-08-10 22:11:10,685  INFO      Closing browser.
+2026-08-10 22:11:10,686  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:10,686  INFO      shutil.rmtree worked.
+2026-08-10 22:11:10,686  INFO      Closing browser.
+2026-08-10 22:11:10,686  INFO      Cancelling tasks.
+2026-08-10 22:11:10,686  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:10,827  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:10,827  INFO      shutil.rmtree worked.
+2026-08-10 22:11:10,827  INFO      Cancelling tasks.
+2026-08-10 22:11:10,827  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:10,828  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/predicted_vs_actual.png
+2026-08-10 22:11:10,838  INFO      Chromium init'ed with kwargs {}
+2026-08-10 22:11:10,839  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+2026-08-10 22:11:10,839  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp2p4e0z5j.
+2026-08-10 22:11:10,840  INFO      Opening browser.
+2026-08-10 22:11:10,840  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpixplomju.
+2026-08-10 22:11:10,840  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpixplomju
+2026-08-10 22:11:11,921  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp2p4e0z5j/index.html
+2026-08-10 22:11:12,957  INFO      Getting tab from queue (has 1)
+2026-08-10 22:11:12,957  INFO      Got 3A74
+2026-08-10 22:11:13,013  INFO      Reloading tab 3A74 before return.
+2026-08-10 22:11:13,134  INFO      Putting tab 3A74 back (queue size: 0).
+2026-08-10 22:11:13,135  INFO      Waiting for all cleanups to finish.
+2026-08-10 22:11:13,135  INFO      Exiting Kaleido.
+2026-08-10 22:11:13,135  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:13,135  INFO      shutil.rmtree worked.
+2026-08-10 22:11:13,135  INFO      Closing browser.
+2026-08-10 22:11:13,136  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:13,136  INFO      shutil.rmtree worked.
+2026-08-10 22:11:13,136  INFO      Closing browser.
+2026-08-10 22:11:13,136  INFO      Cancelling tasks.
+2026-08-10 22:11:13,136  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:13,269  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:13,270  INFO      shutil.rmtree worked.
+2026-08-10 22:11:13,270  INFO      Cancelling tasks.
+2026-08-10 22:11:13,270  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:13,270  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/residuals_vs_fitted.png
+2026-08-10 22:11:13,273  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:13,273  INFO      shutil.rmtree worked.
+2026-08-10 22:11:13,385  INFO      Chromium init'ed with kwargs {}
+2026-08-10 22:11:13,386  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+2026-08-10 22:11:13,386  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpiruw_1bc.
+2026-08-10 22:11:13,386  INFO      Opening browser.
+2026-08-10 22:11:13,386  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp6sqwf19q.
+2026-08-10 22:11:13,386  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp6sqwf19q
+2026-08-10 22:11:14,468  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpiruw_1bc/index.html
+2026-08-10 22:11:15,445  INFO      Getting tab from queue (has 1)
+2026-08-10 22:11:15,446  INFO      Got EC3E
+2026-08-10 22:11:15,514  INFO      Reloading tab EC3E before return.
+2026-08-10 22:11:15,633  INFO      Putting tab EC3E back (queue size: 0).
+2026-08-10 22:11:15,633  INFO      Waiting for all cleanups to finish.
+2026-08-10 22:11:15,633  INFO      Exiting Kaleido.
+2026-08-10 22:11:15,634  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:15,634  INFO      shutil.rmtree worked.
+2026-08-10 22:11:15,634  INFO      Closing browser.
+2026-08-10 22:11:15,635  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:15,635  INFO      shutil.rmtree worked.
+2026-08-10 22:11:15,635  INFO      Closing browser.
+2026-08-10 22:11:15,635  INFO      Cancelling tasks.
+2026-08-10 22:11:15,635  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:15,780  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:15,780  INFO      shutil.rmtree worked.
+2026-08-10 22:11:15,781  INFO      Cancelling tasks.
+2026-08-10 22:11:15,781  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:15,781  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/residual_histogram.png
+2026-08-10 22:11:15,787  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:15,787  INFO      shutil.rmtree worked.
+2026-08-10 22:11:15,788  INFO      Chromium init'ed with kwargs {}
+2026-08-10 22:11:15,789  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+2026-08-10 22:11:15,789  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpg58v6q5y.
+2026-08-10 22:11:15,789  INFO      Opening browser.
+2026-08-10 22:11:15,790  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp3p5kpxso.
+2026-08-10 22:11:15,790  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp3p5kpxso
+2026-08-10 22:11:16,897  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpg58v6q5y/index.html
+2026-08-10 22:11:17,801  INFO      Getting tab from queue (has 1)
+2026-08-10 22:11:17,801  INFO      Got B44E
+2026-08-10 22:11:17,858  INFO      Reloading tab B44E before return.
+2026-08-10 22:11:17,982  INFO      Putting tab B44E back (queue size: 0).
+2026-08-10 22:11:17,982  INFO      Waiting for all cleanups to finish.
+2026-08-10 22:11:17,982  INFO      Exiting Kaleido.
+2026-08-10 22:11:17,983  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:17,983  INFO      shutil.rmtree worked.
+2026-08-10 22:11:17,983  INFO      Closing browser.
+2026-08-10 22:11:17,984  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:17,984  INFO      shutil.rmtree worked.
+2026-08-10 22:11:17,984  INFO      Closing browser.
+2026-08-10 22:11:17,985  INFO      Cancelling tasks.
+2026-08-10 22:11:17,985  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:18,124  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:18,124  INFO      shutil.rmtree worked.
+2026-08-10 22:11:18,124  INFO      Cancelling tasks.
+2026-08-10 22:11:18,124  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:18,125  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/feature_importance.png
+2026-08-10 22:11:18,142  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:18,142  INFO      shutil.rmtree worked.
+2026-08-10 22:11:18,158  INFO      Chromium init'ed with kwargs {}
+2026-08-10 22:11:18,159  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+2026-08-10 22:11:18,159  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp1kh2b2hr.
+2026-08-10 22:11:18,159  INFO      Opening browser.
+2026-08-10 22:11:18,159  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpljhq1fql.
+2026-08-10 22:11:18,159  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpljhq1fql
+2026-08-10 22:11:19,220  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp1kh2b2hr/index.html
+2026-08-10 22:11:20,189  INFO      Getting tab from queue (has 1)
+2026-08-10 22:11:20,189  INFO      Got 9AEE
+2026-08-10 22:11:20,228  INFO      Reloading tab 9AEE before return.
+2026-08-10 22:11:20,358  INFO      Putting tab 9AEE back (queue size: 0).
+2026-08-10 22:11:20,358  INFO      Waiting for all cleanups to finish.
+2026-08-10 22:11:20,358  INFO      Exiting Kaleido.
+2026-08-10 22:11:20,359  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:20,360  INFO      shutil.rmtree worked.
+2026-08-10 22:11:20,360  INFO      Closing browser.
+2026-08-10 22:11:20,361  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:20,361  INFO      shutil.rmtree worked.
+2026-08-10 22:11:20,362  INFO      Closing browser.
+2026-08-10 22:11:20,362  INFO      Cancelling tasks.
+2026-08-10 22:11:20,362  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:20,505  INFO      TemporaryDirectory.cleanup() worked.
+2026-08-10 22:11:20,505  INFO      shutil.rmtree worked.
+2026-08-10 22:11:20,505  INFO      Cancelling tasks.
+2026-08-10 22:11:20,505  INFO      Exiting Kaleido/Choreo.
+2026-08-10 22:11:20,506  INFO      Saved → /Users/sanjana/Smart_dairyvisionAI/outputs/cv_r2_boxplot.png

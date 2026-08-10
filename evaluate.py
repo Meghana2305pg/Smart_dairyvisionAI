@@ -26,6 +26,7 @@ import pandas as pd
 import plotly.express as px
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+from xgboost import XGBRegressor
 from scipy import stats
 from sklearn.inspection import permutation_importance
 from config import MODEL_PARAMS
@@ -249,6 +250,93 @@ def plot_feature_importance(df_imp: pd.DataFrame, model_name: str):
     fig.write_image(path)
     logger.info("Saved → %s", path)
     return fig
+
+
+def train_xgboost_with_eval_history(
+    model: XGBRegressor,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+) -> XGBRegressor:
+    """Re-train the tuned XGBoost model with eval history on the current split."""
+    params = model.get_params(deep=False)
+    xgb = XGBRegressor(**params, verbosity=0)
+    xgb.fit(
+        X_train,
+        y_train,
+        eval_set=[(X_train, y_train), (X_test, y_test)],
+        eval_metric="rmse",
+        verbose=False,
+    )
+    return xgb
+
+
+def plot_xgboost_training_validation_rmse_curve(
+    model: XGBRegressor,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+) -> str:
+    """Plot the XGBoost training and validation RMSE curve from eval history."""
+    history = getattr(model, "evals_result_", None)
+    if history is None:
+        logger.error("XGBoost eval history is not available after fitting.")
+        raise RuntimeError("Missing XGBoost eval history.")
+
+    if "validation_0" not in history or "validation_1" not in history:
+        logger.error("Unexpected eval history keys: %s", list(history.keys()))
+        raise RuntimeError("Cannot locate training and validation eval sets in XGBoost history.")
+
+    train_rmse = history["validation_0"]["rmse"]
+    valid_rmse = history["validation_1"]["rmse"]
+
+    n_rounds = min(len(train_rmse), len(valid_rmse))
+    rounds = list(range(1, n_rounds + 1))
+    train_rmse = train_rmse[:n_rounds]
+    valid_rmse = valid_rmse[:n_rounds]
+
+    fig, ax = plt.subplots(figsize=(6.2, 4.0), dpi=300)
+    ax.plot(
+        rounds,
+        train_rmse,
+        label="Training RMSE",
+        color="#4C78A8",
+        linewidth=2.2,
+        marker="o",
+        markersize=4,
+    )
+    ax.plot(
+        rounds,
+        valid_rmse,
+        label="Validation RMSE",
+        color="#F58518",
+        linewidth=2.2,
+        marker="o",
+        markersize=4,
+    )
+
+    ax.set_title("XGBoost Training vs Validation RMSE", fontsize=14, fontweight="bold", pad=10)
+    ax.set_xlabel("Boosting Round", fontsize=11)
+    ax.set_ylabel("RMSE (L/day)", fontsize=11)
+    ax.set_xlim(1, n_rounds)
+    ax.set_axisbelow(True)
+    ax.grid(axis="y", linestyle="--", linewidth=0.6, alpha=0.25)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
+    ax.tick_params(axis="x", labelsize=10)
+    ax.tick_params(axis="y", labelsize=10)
+    ax.legend(frameon=False, fontsize=10, loc="best")
+    fig.tight_layout(pad=0.8)
+
+    out_path = os.path.join(OUTPUT_DIR, "xgboost_training_validation_rmse_curve.png")
+    fig.savefig(out_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    logger.info("Saved XGBoost training curve → %s", out_path)
+    return out_path
 
 
 def plot_cv_boxplot(df_cv: pd.DataFrame):
@@ -525,6 +613,113 @@ def plot_test_set_model_comparison(
 
     return results_df
 
+def plot_model_comparison_r2():
+    """Render a clean single-axis R² comparison figure for the common test split."""
+    csv_path = os.path.join(
+        os.path.dirname(__file__),
+        "outputs",
+        "all_model_test_comparison.csv"
+    )
+    df = pd.read_csv(csv_path)
+    df = df.set_index("Model").loc[
+        ["XGBoost", "Linear Regression", "Random Forest", "Naive Baseline", "Decision Tree"]
+    ].reset_index()
+
+    fig, ax = plt.subplots(
+        figsize=(7.0, 4.2),
+        dpi=350
+    )
+
+    x = np.arange(len(df))
+    bar_width = 0.6
+    colors = [
+        "#4C78A8",  # XGBoost
+        "#F58518",  # Linear Regression
+        "#54A24B",  # Random Forest
+        "#B72E45",  # Naive Baseline
+        "#6A4A9A",  # Decision Tree
+    ]
+
+    heights = np.maximum(df["R2"].astype(float), 0.0)
+    bars = ax.bar(
+        x,
+        heights,
+        width=bar_width,
+        color=colors,
+        edgecolor="none",
+        zorder=3
+    )
+
+    ax.set_title(
+        "Model Comparison on Common Test Split (Fixed Weather + Same Features)",
+        fontsize=13,
+        fontweight="bold",
+        pad=10
+    )
+    ax.set_xlabel("Model", fontsize=11)
+    ax.set_ylabel("R²", fontsize=11)
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        df["Model"],
+        rotation=18,
+        ha="right",
+        fontsize=9
+    )
+    ax.tick_params(axis="y", labelsize=9)
+    ax.tick_params(axis="x", labelsize=9)
+
+    y_max = max(df["R2"].max(), 0.0)
+    ax.set_ylim(0, y_max * 1.12 + 0.005)
+    ax.set_xlim(-0.5, len(df) - 0.5)
+    ax.grid(axis="y", linestyle="--", linewidth=0.5, alpha=0.25)
+    ax.set_axisbelow(True)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(True)
+    ax.spines["bottom"].set_visible(True)
+    ax.patch.set_visible(False)
+    fig.patch.set_facecolor("white")
+
+    for bar, value in zip(bars, df["R2"]):
+        label_value = value
+        if abs(label_value) < 0.0005:
+            label_text = "0.000"
+        else:
+            label_text = f"{label_value:.3f}"
+
+        ax.annotate(
+            label_text,
+            xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
+            xytext=(0, 6),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+            fontweight="bold"
+        )
+
+    fig.tight_layout(pad=0.8)
+
+    out_path = os.path.join(
+        os.path.dirname(__file__),
+        "outputs",
+        "model_comparison_r2.png"
+    )
+    research_fig_dir = os.path.join(
+        os.path.dirname(__file__),
+        "research_outputs",
+        "figures"
+    )
+    os.makedirs(research_fig_dir, exist_ok=True)
+    research_path = os.path.join(research_fig_dir, "model_comparison_r2.png")
+
+    fig.savefig(out_path, dpi=350, bbox_inches="tight")
+    fig.savefig(research_path, dpi=350, bbox_inches="tight")
+    plt.close(fig)
+
+    logger.info("Saved model comparison R2 figure -> %s", out_path)
+    logger.info("Saved model comparison R2 figure -> %s", research_path)
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -550,6 +745,7 @@ def main():
         y_train,
         y_test
     )
+    plot_model_comparison_r2()
 
     # Load saved best model
     if not os.path.exists(MODEL_PATH):
@@ -563,8 +759,27 @@ def main():
     model_name = type(model).__name__
     logger.info("Loaded model: %s", model_name)
 
-    # Refit on training split for fair test-set evaluation
-    model.fit(X_train, y_train)
+    # Refit on training split for fair test-set evaluation.
+    # For XGBoost, capture the actual per-boosting-round RMSE history
+    # using eval_set and eval_metric="rmse".
+    if isinstance(model, XGBRegressor):
+        model = train_xgboost_with_eval_history(
+            model,
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+        )
+        plot_xgboost_training_validation_rmse_curve(
+            model,
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+        )
+    else:
+        model.fit(X_train, y_train)
+
     y_pred = model.predict(X_test)
 
     # ─────────────────────────────────────────────────────────────
