@@ -410,13 +410,6 @@
 		
 		\begin{figure}[htbp]
 			\centering
-			\includegraphics[width=0.95\linewidth]{../outputs/feature_importance.png}
-			\caption{Permutation importance of engineered features for the final XGBoost milk-yield model.}
-			\label{fig:feature_importance_p1}
-		\end{figure}
-		
-		\begin{figure}[htbp]
-			\centering
 			\includegraphics[width=0.95\linewidth]{../outputs/shap/shap_summary.png}
 			\caption{SHAP summary plot for the final XGBoost model, showing the relative contribution of engineered weather-aware and animal variables.}
 			\label{fig:shap_summary_p1}
@@ -429,26 +422,7 @@
 		
 		Residual diagnostics also support error behavior assessment. The hold-out residuals produce a Shapiro-Wilk statistic of 0.9962 with a p-value of 0.1574, indicating that the residual distribution is not inconsistent with normality.
 		
-		\begin{figure}[htbp]
-			\centering
-			\includegraphics[width=0.95\linewidth]{../outputs/residual_histogram.png}
-			\caption{Histogram of residuals for the XGBoost model on the hold-out test set.}
-			\label{fig:residual_histogram_p1}
-		\end{figure}
-		
-		\begin{figure}[htbp]
-			\centering
-			\includegraphics[width=0.95\linewidth]{../outputs/residuals_vs_fitted.png}
-			\caption{Residuals versus fitted values for the XGBoost model, used to assess error structure and predictive stability.}
-			\label{fig:residuals_vs_fitted_p1}
-		\end{figure}
-		
 		This statistical validation confirms that the current framework is evidence-backed and keeps the analysis within the intended scope of weather-aware feature engineering and explainable milk-yield prediction.
-		
-		\subsection{Interpretation of the Paper 1 Evidence}
-		The current Paper 1 results support the two stated objectives without extending beyond the defined scope. The weather-aware feature engineering stage demonstrates that the model incorporates environmental variability through temperature, humidity, THI, and engineered interactions, while the predictive stage shows that XGBoost is the strongest regressor among the evaluated models on the current dairy dataset. The explainability and statistical-validation analyses further show that the model is interpretable and that its performance difference from competing models is statistically meaningful under the current evaluation design.
-		
-		The observed predictive performance is moderate rather than high, which is consistent with the noisiness inherent in point-in-time observational data and the absence of longitudinal production histories. This should be interpreted as a valid predictive association, not as a causal claim. The framework is therefore best understood as a data-driven weather-aware milk-yield prediction system with explainability and statistical validation.
 		
 		\section{Conclusion and Future Work}
 		
