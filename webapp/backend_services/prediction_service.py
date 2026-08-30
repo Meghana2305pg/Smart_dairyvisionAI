@@ -11,7 +11,6 @@ from webapp.config.settings import DEFAULT_BASE_HUM, DEFAULT_BASE_TEMP
 
 def predict_milk_yield(input_row: dict[str, Any], base_temp: float = DEFAULT_BASE_TEMP, base_hum: float = DEFAULT_BASE_HUM) -> dict[str, Any]:
     """Generate a prediction by reusing the existing model and feature pipeline for the current inputs."""
-    print("STEP 6 predict_milk_yield")
     _, X, _ = build_feature_row(input_row, base_temp=base_temp, base_hum=base_hum)
     model = load_model()
 

@@ -93,7 +93,6 @@ def _restore_workspace_state() -> None:
 
     if user_id:
         st.session_state.user_id = user_id
-        print("[DEBUG] st.session_state.user_id assigned")
         log_event("debug_session_user_id", user_id=user_id)
     if user_email:
         st.session_state.user_email = user_email
@@ -104,7 +103,6 @@ def _restore_workspace_state() -> None:
 
     if current_user:
         st.session_state.user = current_user
-        print("[DEBUG] st.session_state.current_user assigned", current_user)
         log_event("debug_session_current_user", user_id=current_user.get("id") if current_user else None)
     elif user_id:
         st.session_state.user = {
@@ -145,13 +143,11 @@ def _restore_workspace_state() -> None:
 
     if farm is not None:
         st.session_state.farm = farm
-        print("[DEBUG] st.session_state.active_farm assigned", farm)
         log_event("debug_session_active_farm", farm_id=farm.get("farm_id") if farm else None)
         st.session_state.farm_id = farm.get("farm_id") or farm_id
         st.session_state.farm_name = farm.get("name") or farm_name
         if not st.session_state.get("cows"):
             st.session_state.cows = st.session_state.cow_service.get_cows()
-            print("[DEBUG] st.session_state.cows assigned", st.session_state.cows)
             log_event("debug_session_cows", cow_count=len(st.session_state.cows))
         st.session_state.pending_farm_setup = False
 
@@ -174,13 +170,6 @@ def initialize_app_state() -> None:
     cow_service = CowService()
     observation_service = ObservationService(cow_service=cow_service)
     dashboard_service = DashboardService(cow_service=cow_service, observation_service=observation_service)
-    print("===================================")
-    print("APP STARTUP")
-    print("cow_service id =", id(cow_service))
-    print("observation_service id =", id(observation_service))
-    print("===================================")
-    print("[DEBUG] st.session_state.cow_service assigned", cow_service)
-    print("[DEBUG] st.session_state.dashboard assigned", dashboard_service)
     log_event("debug_session_services_initialized")
 
     bootstrap_session_state(
@@ -456,8 +445,6 @@ def render_farm_setup_screen() -> None:
 
 def render_screen(section: str) -> None:
     """Render the requested screen."""
-    print("STEP 1 render_screen")
-    print("[DEBUG] render_screen called for", section, "active_section=", st.session_state.get("active_section"))
     log_event("debug_render_screen", section=section, active_section=st.session_state.get("active_section"), cow_count=len(st.session_state.get("cows") or []))
     section_map = {
         "dashboard": render_dashboard,
@@ -475,7 +462,7 @@ def render_screen(section: str) -> None:
 
     renderer = section_map.get(section, render_dashboard)
     renderer()
-    print("[DEBUG] render_screen finished for", section)
+
 
 
 def main() -> None:

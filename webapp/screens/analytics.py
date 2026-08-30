@@ -36,6 +36,23 @@ def _normalise_cow_records(cow_records: list[dict[str, Any]] | None) -> list[dic
     return normalised
 
 
+def _build_cow_alias_lookup(cow_records: list[dict[str, Any]] | None) -> dict[str, str]:
+    """Map any record identifier back to the canonical cow tag used for analytics joins."""
+    lookup: dict[str, str] = {}
+    for record in cow_records or []:
+        if not isinstance(record, dict):
+            continue
+        canonical_id = str(record.get("cow_id") or record.get("cow_tag") or record.get("id") or "").strip()
+        if not canonical_id:
+            continue
+        for candidate in (record.get("id"), record.get("cow_id"), record.get("cow_tag")):
+            value = str(candidate or "").strip()
+            if value:
+                lookup[value] = canonical_id
+        lookup[canonical_id] = canonical_id
+    return lookup
+
+
 def build_analytics_context(
     cow_records: list[dict[str, Any]] | None = None,
     observations: list[dict[str, Any]] | None = None,
@@ -48,8 +65,9 @@ def build_analytics_context(
     breed_filter: str | None = None,
     health_filter: str | None = None,
 ) -> dict[str, Any]:
-    """Assemble the analytics payload using the existing dashboard and repository services."""
+    """Assemble the analytics payload using the normalized Digital Twin and dashboard data."""
     cow_list = _normalise_cow_records(cow_records)
+    alias_lookup = _build_cow_alias_lookup(cow_list)
     observation_list = list(observations or [])
     prediction_list = list(predictions or [])
     health_list = list(health or [])
@@ -58,29 +76,47 @@ def build_analytics_context(
 
     prediction_lookup: dict[str, float] = {}
     for prediction in prediction_list:
-        cow_id = prediction.get("cow_id")
-        if cow_id and prediction.get("prediction") is not None:
-            prediction_lookup[str(cow_id)] = float(prediction["prediction"])
+        if not isinstance(prediction, dict):
+            continue
+        predicted_value = prediction.get("prediction")
+        if predicted_value is None:
+            continue
+        raw_cow_id = prediction.get("cow_id") or prediction.get("cow_tag") or ""
+        resolved_cow_id = alias_lookup.get(str(raw_cow_id), str(raw_cow_id))
+        prediction_lookup[resolved_cow_id] = float(predicted_value)
 
     filtered_observations: list[dict[str, Any]] = []
     for observation in observation_list:
         if not isinstance(observation, dict):
             continue
-        timestamp = observation.get("timestamp")
+        timestamp = (
+            observation.get("timestamp")
+            or observation.get("created_at")
+            or observation.get("observation_date")
+        )
         if date_range:
             start_date, end_date = date_range
-            if start_date and timestamp and pd.Timestamp(timestamp) < pd.Timestamp(start_date):
+            if timestamp is None:
                 continue
-            if end_date and timestamp and pd.Timestamp(timestamp) > pd.Timestamp(end_date):
+            obs_time = pd.Timestamp(timestamp).tz_localize(None)
+            start = pd.Timestamp(start_date)
+            end = pd.Timestamp(end_date)
+            if start_date and obs_time < start:
                 continue
-        cow_id = str(observation.get("cow_id") or "")
-        if cow_filter and cow_filter != "All" and cow_id != cow_filter:
+            if end_date and obs_time > end:
+                continue
+        raw_cow_id = str(observation.get("cow_id") or "")
+        resolved_cow_id = alias_lookup.get(raw_cow_id, raw_cow_id)
+        if cow_filter and cow_filter != "All" and resolved_cow_id != cow_filter:
             continue
-        filtered_observations.append(observation)
+        payload = dict(observation)
+        payload["cow_id"] = resolved_cow_id
+        payload["cow_tag"] = resolved_cow_id
+        filtered_observations.append(payload)
 
     filtered_cows: list[dict[str, Any]] = []
     for cow in cow_list:
-        cow_id = str(cow.get("cow_id") or "")
+        cow_id = str(cow.get("cow_id") or cow.get("cow_tag") or cow.get("id") or "")
         if cow_filter and cow_filter != "All" and cow_id != cow_filter:
             continue
         breed = str(cow.get("breed") or "")
@@ -93,8 +129,13 @@ def build_analytics_context(
         prediction_value = prediction_lookup.get(cow_id)
         filtered_cows.append({
             **cow,
+            "cow_id": cow_id,
+            "name": cow.get("name") or cow.get("cow_name") or cow_id,
+            "breed": cow.get("breed") or "Unknown",
+            "predicted_yield": prediction_value if prediction_value is not None else 0.0,
             "prediction": prediction_value,
             "yield": prediction_value if prediction_value is not None else 0.0,
+            "health_status": int(health_status_value) if health_status_value is not None else 0,
             "health_label": "healthy" if not health_status_value else "sick",
         })
 
@@ -102,21 +143,30 @@ def build_analytics_context(
     healthy_cows = sum(1 for cow in filtered_cows if cow.get("health_label") == "healthy")
     sick_cows = sum(1 for cow in filtered_cows if cow.get("health_label") == "sick")
     average_yield = round(sum(float(cow.get("yield", 0.0)) for cow in filtered_cows) / total_cows, 1) if total_cows else 0.0
-    today_prediction = round(sum(float(cow.get("yield", 0.0)) for cow in filtered_cows) / total_cows, 1) if total_cows else 0.0
+    today_prediction = round(sum(float(cow.get("predicted_yield", 0.0)) for cow in filtered_cows) / total_cows, 1) if total_cows else 0.0
     active_alerts = sum(1 for item in health_list if str(item.get("severity", "")).lower() in {"high", "critical"})
 
     top_performing = sorted(filtered_cows, key=lambda item: float(item.get("yield", 0.0)), reverse=True)[:3]
     poor_performing = sorted(filtered_cows, key=lambda item: float(item.get("yield", 0.0)))[:3]
 
+    for ranked in top_performing + poor_performing:
+        ranked["predicted_yield"] = float(ranked.get("predicted_yield", ranked.get("yield", 0.0)) or 0.0)
+        ranked["health_status"] = int(ranked.get("health_status", 0) or 0)
+
     chart_observations: list[dict[str, Any]] = []
     for observation in filtered_observations:
         payload = dict(observation)
-        cow_id = str(payload.get("cow_id") or "")
-        prediction_value = prediction_lookup.get(cow_id)
-        payload.setdefault("yield", prediction_value if prediction_value is not None else 0.0)
-        payload.setdefault("temperature", current_weather[0])
-        payload.setdefault("humidity", current_weather[1])
-        payload.setdefault("health_status", 0)
+        payload["timestamp"] = (
+            payload.get("timestamp")
+            or payload.get("created_at")
+            or payload.get("observation_date")
+        )
+        resolved_cow_id = str(payload.get("cow_id") or payload.get("cow_tag") or "")
+        prediction_value = prediction_lookup.get(resolved_cow_id)
+        payload["yield"] = prediction_value if prediction_value is not None else float(payload.get("yield") or payload.get("feed") or 0.0)
+        payload["temperature"] = payload.get("temperature", current_weather[0])
+        payload["humidity"] = payload.get("humidity", current_weather[1])
+        payload["health_status"] = int(payload.get("health_status", 0) or 0)
         chart_observations.append(payload)
 
     history = [
@@ -157,8 +207,26 @@ def build_analytics_context(
             "today_prediction": today_prediction,
             "active_alerts": active_alerts,
         },
-        "top_performing": top_performing,
-        "poor_performing": poor_performing,
+        "top_performing": [
+            {
+                "cow_id": item.get("cow_id"),
+                "name": item.get("name") or item.get("cow_id"),
+                "breed": item.get("breed") or "Unknown",
+                "predicted_yield": float(item.get("predicted_yield", item.get("yield", 0.0)) or 0.0),
+                "health_status": int(item.get("health_status", 0) or 0),
+            }
+            for item in top_performing
+        ],
+        "poor_performing": [
+            {
+                "cow_id": item.get("cow_id"),
+                "name": item.get("name") or item.get("cow_id"),
+                "breed": item.get("breed") or "Unknown",
+                "predicted_yield": float(item.get("predicted_yield", item.get("yield", 0.0)) or 0.0),
+                "health_status": int(item.get("health_status", 0) or 0),
+            }
+            for item in poor_performing
+        ],
         "chart_observations": chart_observations,
         "history": history,
         "insights": insights,
@@ -171,7 +239,7 @@ def render_analytics() -> None:
     """Render a professional executive analytics dashboard based on the live project data."""
     dashboard_service: DashboardService = st.session_state.dashboard_service
     dashboard = dashboard_service.build_dashboard()
-    cow_records = dashboard_service.repository.get_cows()
+    cow_records = dashboard_service.cow_service.get_cows()
     observations = dashboard_service.repository.get_observations()
 
     st.markdown(
@@ -252,24 +320,24 @@ def render_analytics() -> None:
     chart_col1, chart_col2 = st.columns(2, gap="medium")
     with chart_col1:
         st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
-        st.plotly_chart(build_milk_production_chart(context["chart_observations"]), use_container_width=True)
+        st.plotly_chart(build_milk_production_chart(context["chart_observations"]), use_container_width=True, key="milk_chart")
         st.caption("Monthly trend in milk output helps identify performance swings and production opportunities.")
         st.markdown('</div>', unsafe_allow_html=True)
     with chart_col2:
         st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
-        st.plotly_chart(build_health_trend_chart(context["chart_observations"]), use_container_width=True)
+        st.plotly_chart(build_health_trend_chart(context["chart_observations"]), use_container_width=True, key="health_chart")
         st.caption("Health signals provide a quick view of herd condition and change over time.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     chart_col3, chart_col4 = st.columns(2, gap="medium")
     with chart_col3:
         st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
-        st.plotly_chart(build_weather_vs_milk_chart(context["chart_observations"]), use_container_width=True)
+        st.plotly_chart(build_weather_vs_milk_chart(context["chart_observations"]), use_container_width=True, key="weather_chart")
         st.caption("Temperature and humidity are compared with milk output to understand environmental influence.")
         st.markdown('</div>', unsafe_allow_html=True)
     with chart_col4:
         st.markdown('<div class="chart-panel">', unsafe_allow_html=True)
-        st.plotly_chart(build_prediction_history_chart(context["history"]), use_container_width=True)
+        st.plotly_chart(build_prediction_history_chart(context["history"]), use_container_width=True, key="prediction_chart")
         st.caption("Prediction history supports confidence checks and short-interval monitoring decisions.")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -278,13 +346,15 @@ def render_analytics() -> None:
     with ranking_col1:
         render_section_header("Top Performing Cows", "Highest-yield cows in the current filter set.")
         if context["top_performing"]:
-            st.dataframe(pd.DataFrame(context["top_performing"]), use_container_width=True)
+            top_df = pd.DataFrame(context["top_performing"])[["cow_id", "name", "breed", "predicted_yield", "health_status"]]
+            st.dataframe(top_df, use_container_width=True)
         else:
             st.info("No performance data available yet.", icon="ℹ️")
     with ranking_col2:
         render_section_header("Poor Performing Cows", "Cows that may need closer review or intervention.")
         if context["poor_performing"]:
-            st.dataframe(pd.DataFrame(context["poor_performing"]), use_container_width=True)
+            poor_df = pd.DataFrame(context["poor_performing"])[["cow_id", "name", "breed", "predicted_yield", "health_status"]]
+            st.dataframe(poor_df, use_container_width=True)
         else:
             st.info("No performance data available yet.", icon="ℹ️")
 

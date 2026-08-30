@@ -91,6 +91,6 @@ def render_analytics() -> None:
     with col2:
         info_card("Twin Sync Rate", "100%", "Digital twin status", "success")
     with col3:
-        info_card("Observation Freshness", "< 1h", "Latest data age", "success")
+        info_card("Observation Freshness", "Less than 1h", "Latest data age", "success")
     with col4:
         info_card("API Health", "Operational", "Backend services", "success")

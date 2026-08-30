@@ -10,10 +10,32 @@ import plotly.graph_objects as go
 
 def _coerce_frame(records: list[dict[str, Any]]) -> pd.DataFrame:
     if not records:
-        return pd.DataFrame(columns=["timestamp", "value", "cow_id", "health_status", "temperature", "humidity", "yield"])
+        return pd.DataFrame(
+            columns=[
+                "timestamp",
+                "value",
+                "cow_id",
+                "health_status",
+                "temperature",
+                "humidity",
+                "yield",
+            ]
+        )
+
     frame = pd.DataFrame(records)
-    if "timestamp" in frame.columns:
-        frame["timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce")
+
+    # Use whichever timestamp column exists
+    if "timestamp" not in frame.columns:
+        if "created_at" in frame.columns:
+            frame["timestamp"] = frame["created_at"]
+        elif "observation_date" in frame.columns:
+            frame["timestamp"] = frame["observation_date"]
+
+    frame["timestamp"] = pd.to_datetime(
+        frame["timestamp"],
+        errors="coerce",
+    )
+
     return frame
 
 
@@ -38,7 +60,11 @@ def build_health_trend_chart(observations: list[dict[str, Any]]) -> go.Figure:
     frame = frame.dropna(subset=["timestamp"]).sort_values("timestamp")
     if "health_status" not in frame.columns:
         frame["health_status"] = 0
-    frame["health_status"] = frame["health_status"].astype(int)
+    frame["health_status"] = (
+    pd.to_numeric(frame["health_status"], errors="coerce")
+    .fillna(0)
+    .astype(int)
+    )
     figure = px.line(frame, x="timestamp", y="health_status", markers=True, title="Health Trend")
     figure.update_layout(template="plotly_white", margin=dict(l=20, r=20, t=40, b=20))
     figure.update_yaxes(title="Health status (0=healthy, 1=sick)")
@@ -55,7 +81,10 @@ def build_weather_vs_milk_chart(observations: list[dict[str, Any]]) -> go.Figure
     if "humidity" not in frame.columns:
         frame["humidity"] = 0
     if "yield" not in frame.columns:
-        frame["yield"] = 0
+        if "feed" in frame.columns:
+            frame["yield"] = frame["feed"]
+        else:
+            frame["yield"] = 0
     frame["yield"] = pd.to_numeric(frame["yield"], errors="coerce").fillna(0)
     figure = px.scatter(
         frame,

@@ -8,7 +8,6 @@ from typing import Any
 import traceback
 
 import streamlit as st
-print("<<<<<<<<<<<< OPERATIONS.PY LOADED >>>>>>>>>>>>>")
 
 from webapp.backend_services.feature_service import get_feature_defaults
 from webapp.backend_services.health_service import get_health_alerts_for_input
@@ -122,7 +121,6 @@ def _render_stepper(current_step: int) -> None:
 
 def render_daily_operations() -> None:
     """Render the 5-step guided Daily Operations workflow."""
-    print("STEP 2 render_daily_operations")
     st.markdown(
         """
         <style>
@@ -156,11 +154,6 @@ def render_daily_operations() -> None:
 
     cow_service: CowService = st.session_state.cow_service
     observation_service: ObservationService = st.session_state.observation_service
-    print("===================================")
-    print("OPERATIONS SCREEN")
-    print("session observation_service =", id(observation_service))
-    print("session cow_service =", id(cow_service))
-    print("===================================")
     cows = cow_service.get_cows()
 
     if not cows:
@@ -179,9 +172,7 @@ def render_daily_operations() -> None:
     cow_payloads = [cow.get("cow", cow) if isinstance(cow, dict) and "cow" in cow else cow for cow in cows]
     cow_ids = [str(item.get("cow_id") or "unknown") for item in cow_payloads]
 
-    st.write("DEBUG Daily Operations cows", cows)
-    st.write("DEBUG Daily Operations cow_ids", cow_ids)
-    st.write("DEBUG Daily Operations session daily_ops_cow", st.session_state.get("daily_ops_cow"))
+
 
     selected_cow_id = st.session_state.get("daily_ops_cow") or cow_ids[0]
     if selected_cow_id not in cow_ids:
@@ -502,8 +493,6 @@ def render_daily_operations() -> None:
 
         with act_cols[1]:
             if st.button("🚀 Confirm & Generate Prediction", key="btn_ops_confirm_submit", type="primary", use_container_width=True):
-                print("BUTTON CLICKED")
-                print("STEP 2.1 daily operations confirm button clicked")
                 validation_errors = validate_daily_operations_form({
                     "cow_id": selected_cow_id,
                     "age": age,
@@ -518,8 +507,7 @@ def render_daily_operations() -> None:
                         st.error(err)
                 else:
                     try:
-                        st.write("DEBUG Daily Operations submit selected_cow_id", selected_cow_id)
-                        st.write("DEBUG Daily Operations submit cow_payloads", cow_payloads)
+
                         Observation(
                             cow_id=selected_cow_id,
                             age=float(age),
@@ -530,8 +518,7 @@ def render_daily_operations() -> None:
                             health_status=int(health_status),
                             notes=notes,
                         )
-                        print(id(observation_service.repository.client))
-                        print(id(st.session_state["auth_service"].client))
+
                         result = observation_service.record_observation(
                             cow_id=selected_cow_id,
                             age=float(age),

@@ -219,9 +219,7 @@ def render_herd() -> None:
     raw_cows = cow_service.get_cows()
     cows = [_normalize_cow(item) for item in raw_cows]
 
-    st.write("DEBUG Herd session selected_cow_id", st.session_state.get("selected_cow_id"))
-    st.write("DEBUG Herd session daily_ops_cow", st.session_state.get("daily_ops_cow"))
-    st.write("DEBUG Herd cows", cows)
+
 
     # ==============================================================================
     # 1. PAGE HEADER
@@ -499,7 +497,6 @@ def render_herd() -> None:
                     if st.button("👤 View Profile", key=f"act_prof_{cow_id}", use_container_width=True):
                         _set_profile_view(cow_id)
                     if st.button("📝 Record Observation", key=f"act_obs_{cow_id}", use_container_width=True):
-                        st.write("DEBUG Herd action Record Observation setting cow_id", cow_id)
                         st.session_state.selected_cow_id = cow_id
                         st.session_state.daily_ops_cow = cow_id
                         st.session_state.active_section = "daily_operations"

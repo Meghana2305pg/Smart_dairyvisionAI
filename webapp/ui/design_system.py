@@ -7,6 +7,7 @@ and reusable UI helper components across the application.
 from __future__ import annotations
 
 from html import escape
+from textwrap import dedent
 
 import streamlit as st
 
@@ -513,19 +514,21 @@ def render_metric_card(
     change_html = f"<span class='chip success' style='margin-left:0.4rem;'>{escape(change_pct)}</span>" if change_pct else ""
 
     st.markdown(
-        f"""
-        <div class="metric-card">
-            <div style='display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;'>
-                <div class="metric-title">{escape(title)}</div>
-                {icon_html}
+        dedent(
+            f"""
+            <div class="metric-card">
+                <div style='display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;'>
+                    <div class="metric-title">{escape(title)}</div>
+                    {icon_html}
+                </div>
+                <div>
+                    <div class="metric-value">{escape(value)}{change_html}</div>
+                    <div class="metric-subtitle">{escape(subtitle)}</div>
+                </div>
+                {status_html}
             </div>
-            <div>
-                <div class="metric-value">{escape(value)}{change_html}</div>
-                <div class="metric-subtitle">{escape(subtitle)}</div>
-            </div>
-            {status_html}
-        </div>
-        """,
+            """
+        ),
         unsafe_allow_html=True,
     )
 
@@ -545,16 +548,18 @@ def render_info_card(
     )
 
     st.markdown(
-        f"""
-        <div class="dashboard-card" style='padding:{SPACING_MD};'>
-            <div style='display:flex;align-items:center;margin-bottom:{SPACING_XS};'>
-                {icon_html}
-                <div class="metric-title" style='color:var(--dv-text);'>{escape(title)}</div>
+        dedent(
+            f"""
+            <div class="dashboard-card" style='padding:{SPACING_MD};'>
+                <div style='display:flex;align-items:center;margin-bottom:{SPACING_XS};'>
+                    {icon_html}
+                    <div class="metric-title" style='color:var(--dv-text);'>{escape(title)}</div>
+                </div>
+                <div style='font-size:{FONT_BODY};color:var(--dv-text);line-height:1.55;'>{escape(content)}</div>
+                {footer_html}
             </div>
-            <div style='font-size:{FONT_BODY};color:var(--dv-text);line-height:1.55;'>{escape(content)}</div>
-            {footer_html}
-        </div>
-        """,
+            """
+        ),
         unsafe_allow_html=True,
     )
 

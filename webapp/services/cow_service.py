@@ -9,7 +9,6 @@ import streamlit as st
 
 from webapp.digital_twin.cow_twin import CowTwin
 from webapp.repositories.cow_repository import CowRepository
-from webapp.utils.logging import log_event
 
 
 class CowService:
@@ -21,6 +20,7 @@ class CowService:
 
     def _normalize_cow_record(self, record: dict[str, Any]) -> dict[str, Any]:
         normalized: dict[str, Any] = {
+            "id": record.get("id"),
             "cow_id": record.get("cow_tag") or record.get("cow_id"),
             "name": record.get("cow_name") or record.get("name"),
             "breed": record.get("breed"),
@@ -139,27 +139,16 @@ class CowService:
             pregnant=metadata.get("pregnant"),
             photo_url=metadata.get("photo_url"),
         )
-        print("--------------------------------")
-        print("DEBUG COW INSERT")
-        print("--------------------------------")
-
-        print("Current user:", st.session_state.get("user"))
-
-        print("Current farm_id:", st.session_state.get("farm_id"))
-
-        print("Current farm:", st.session_state.get("farm"))
-
-        print("Payload:", payload)
 
         auth_service = st.session_state.get("auth_service")
         try:
             auth_val = auth_service.current_user() if auth_service else None
         except Exception as e:
             auth_val = f"ERROR: {e}"
-        print("Auth session:", auth_val)
 
         record = self.repository.create(payload)
         cow_record = self._normalize_cow_record(record)
+        cow_record["id"] = record.get("id")
         cow_record["cow_id"] = cow_id
         cow_record["name"] = cow_name
 
@@ -185,8 +174,77 @@ class CowService:
             self._cow_twins.pop(cow_id, None)
         return deleted
 
+    def load_twin_from_snapshots(self, cow_id: str) -> CowTwin | None:
+        """Load and reconstruct a digital twin from persisted Supabase snapshots.
+        
+        This enables cross-session twin recovery. If the twin doesn't exist in memory,
+        this method loads it from the twin_snapshots table and reconstructs the state.
+        
+        Args:
+            cow_id: Cow UUID
+            
+        Returns:
+            Reconstructed CowTwin with latest snapshot state, or None if no snapshots exist
+        """
+        # Check if already in memory
+        existing_twin = self._cow_twins.get(cow_id)
+        if existing_twin is not None:
+            return existing_twin
+        
+        # Import here to avoid circular dependency
+        from webapp.repositories.snapshot_repository import SnapshotRepository
+        
+        snapshot_repo = SnapshotRepository()
+        latest_snapshot = snapshot_repo.get_latest_for_cow(cow_id)
+        
+        if latest_snapshot is None:
+            # No persisted snapshots; create empty twin
+            cow_record = self.repository.get(cow_id)
+            twin = CowTwin(
+                cow_id=cow_id,
+                name=cow_record.get("cow_name") or cow_record.get("name") if cow_record else cow_id,
+            )
+            self._cow_twins[cow_id] = twin
+            return twin
+        
+        # Reconstruct twin from latest snapshot
+        cow_record = self.repository.get(cow_id)
+        twin = CowTwin(
+            cow_id=cow_id,
+            name=cow_record.get("cow_name") or cow_record.get("name") if cow_record else cow_id,
+        )
+        
+        # Restore latest state from snapshot
+        snapshot_data = latest_snapshot
+        
+        # Restore prediction, health, explanation
+        if snapshot_data.get("prediction"):
+            twin.latest_prediction = snapshot_data["prediction"]
+        if snapshot_data.get("health"):
+            twin.latest_health = snapshot_data["health"]
+        if snapshot_data.get("explanation"):
+            twin.latest_explanation = snapshot_data["explanation"]
+        if snapshot_data.get("recommendations"):
+            twin.recommendations = snapshot_data["recommendations"]
+        
+        # Restore twin status
+        if snapshot_data.get("twin_status"):
+            twin.state.status = snapshot_data["twin_status"]
+        
+        # Restore last_updated from created_at
+        if snapshot_data.get("created_at"):
+            try:
+                from datetime import datetime
+                if isinstance(snapshot_data["created_at"], str):
+                    twin.state.last_updated = datetime.fromisoformat(snapshot_data["created_at"])
+                else:
+                    twin.state.last_updated = snapshot_data["created_at"]
+            except Exception:
+                pass
+        
+        # Cache in memory
+        self._cow_twins[cow_id] = twin
+        return twin
+
     def get_cows(self) -> list[dict[str, Any]]:
-        print("[DEBUG] CowService.get_cows() called")
-        cows = [self._normalize_cow_record(item) for item in self.repository.list()]
-        log_event("debug_cow_service_get_cows", cow_count=len(cows))
-        return cows
+        return [self._normalize_cow_record(item) for item in self.repository.list()]

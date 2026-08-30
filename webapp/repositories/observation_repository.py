@@ -14,8 +14,7 @@ class ObservationRepository:
         self.client = client or SupabaseClient.from_env()
 
     def create(self, payload: dict[str, Any]) -> dict[str, Any]:
-        print("STEP 5 ObservationRepository.create")
-        print("[OBSERVATION TRACE] observation_payload=", payload)
+
         return self.client.insert("observations", payload)
 
     def list_for_cow(self, cow_id: str) -> list[dict[str, Any]]:

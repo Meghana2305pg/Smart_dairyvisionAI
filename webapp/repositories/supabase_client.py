@@ -90,62 +90,12 @@ class SupabaseClient:
         log_event("supabase_insert_attempt", table=table_name, insert_payload=normalized_payload)
         if self._remote_available():
             try:
-                print("====================================")
-                print("INSERT TABLE:", table_name)
-
-                try:
-                    print("========== HEADERS ==========")
-                    print(self.client.postgrest.session.headers)
-                    print(self.client.postgrest.headers)
-                    print("=============================")
-                except Exception as e:
-                    print("HEADER ERROR:", e)
-
-                print("====================================")
-                print("========== AUTH DEBUG ==========")
-
-                try:
-                    u = self.client.auth.get_user()
-                    print("USER:", u)
-                except Exception as e:
-                    print("GET USER ERROR:", e)
-
-                try:
-                    s = self.client.auth.get_session()
-                    print("SESSION:", s)
-                except Exception as e:
-                    print("GET SESSION ERROR:", e)
-
-                print("================================")
-                print("========== INSERT DEBUG ==========")
-                print("TABLE:", table_name)
-                print("PAYLOAD:", normalized_payload)
-
-                try:
-                    print("AUTH HEADER:",
-                        self.client.postgrest.session.headers.get("Authorization"))
-                except Exception as e:
-                    print("HEADER ERROR:", e)
-
-                print("===============================")
-                try:
-                    response = (
-                        self.client
-                        .table(table_name)
-                        .insert(normalized_payload)
-                        .execute()
-                    )
-
-                    print("INSERT SUCCESS")
-                    print(response)
-
-                except Exception as e:
-                    print("INSERT EXCEPTION")
-                    print(type(e))
-                    print(repr(e))
-                    import traceback
-                    traceback.print_exc()
-                    raise
+                response = (
+                    self.client
+                    .table(table_name)
+                    .insert(normalized_payload)
+                    .execute()
+                )
             except APIError as exc:
                 log_error(
                     "supabase_insert_api_error",
@@ -198,19 +148,19 @@ class SupabaseClient:
         return normalized
 
     def _logger_remote_insert_failure(self, table_name: str, exc: Exception) -> None:
-        print(f"Supabase remote insert failed for {table_name}: {exc}")
+        pass
 
     def _logger_remote_select_failure(self, table_name: str, exc: Exception) -> None:
-        print(f"Supabase remote select failed for {table_name}: {exc}")
+        pass
 
     def _logger_remote_update_failure(self, table_name: str, key: str, exc: Exception) -> None:
-        print(f"Supabase remote update failed for {table_name} ({key}): {exc}")
+        pass
 
     def _logger_remote_delete_failure(self, table_name: str, key: str, exc: Exception) -> None:
-        print(f"Supabase remote delete failed for {table_name} ({key}): {exc}")
+        pass
 
     def _logger_remote_get_failure(self, table_name: str, key: str, exc: Exception) -> None:
-        print(f"Supabase remote get failed for {table_name} ({key}): {exc}")
+        pass
 
     def update(self, table_name: str, identifier: str, payload: dict[str, Any]) -> dict[str, Any]:
         if self._remote_available():

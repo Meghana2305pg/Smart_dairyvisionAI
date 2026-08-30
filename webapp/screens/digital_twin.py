@@ -113,11 +113,13 @@ def build_dashboard_context(
 
 
 def _get_or_create_twin(cow_service: CowService, cow_id: str, name: str | None = None) -> CowTwin:
-    """Reuse an existing digital twin or create one from the current cow record."""
-    twin = cow_service._cow_twins.get(cow_id)
-    if twin is None:
-        twin = CowTwin(cow_id=cow_id, name=name or cow_id)
-        cow_service._cow_twins[cow_id] = twin
+    """Load twin from memory, or recover from Supabase snapshots, or create new.
+    
+    This ensures cross-session twin recovery while maintaining backward compatibility
+    with in-memory-only twins.
+    """
+    # First, try to load from Supabase snapshots (handles cross-session recovery)
+    twin = cow_service.load_twin_from_snapshots(cow_id)
     return twin
 
 
@@ -143,21 +145,51 @@ def render_digital_twin() -> None:
         st.error(f"Cow {selected_cow_id} was not found.")
         return
 
-    twin = _get_or_create_twin(cow_service, selected_cow_id, cow_record.get("name"))
-    observations = observation_service.repository.list_for_cow(selected_cow_id)
-    memory_snapshots = twin.memory_store.list_snapshot_history(selected_cow_id)
-    memory_payload = [
-        {
-            "snapshot_id": snapshot.snapshot_id,
-            "timestamp": snapshot.timestamp,
-            "twin_status": snapshot.twin_status,
-        }
-        for snapshot in memory_snapshots
-    ]
+    cow_uuid = str(cow_record.get("id"))
+    twin = _get_or_create_twin(
+        cow_service,
+        cow_uuid,
+        cow_record.get("name")
+    )
+    observations = observation_service.repository.list_for_cow(cow_uuid)
+    
+    # Load snapshots from Supabase (with fallback to in-memory for backward compatibility)
+    from webapp.repositories.snapshot_repository import SnapshotRepository
+    snapshot_repo = SnapshotRepository()
+    supabase_snapshots = snapshot_repo.list_for_cow(cow_uuid)
+    
+    # Build display payload from Supabase snapshots
+    memory_snapshots = []
+    memory_payload = []
+    
+    if supabase_snapshots:
+        # Use Supabase snapshots
+        memory_payload = [
+            {
+                "snapshot_id": snapshot.get("id") or snapshot.get("snapshot_id"),
+                "timestamp": snapshot.get("created_at") or snapshot.get("timestamp"),
+                "twin_status": snapshot.get("twin_status", "stable"),
+            }
+            for snapshot in supabase_snapshots
+        ]
+        # Also populate memory_snapshots for compatibility
+        memory_snapshots = supabase_snapshots
+    else:
+        # Fallback to in-memory snapshots (for session-local twins)
+        in_memory_snapshots = twin.memory_store.list_snapshot_history(cow_uuid)
+        memory_payload = [
+            {
+                "snapshot_id": snapshot.snapshot_id,
+                "timestamp": snapshot.timestamp,
+                "twin_status": snapshot.twin_status,
+            }
+            for snapshot in in_memory_snapshots
+        ]
+        memory_snapshots = in_memory_snapshots
 
     if not twin.latest_observation and observations:
         latest_observation_payload = Observation(
-            cow_id=selected_cow_id,
+            cow_id=cow_uuid,
             age=float(cow_record.get("age_months") or 24.0),
             weight=float(cow_record.get("weight") or 500.0),
             feed=float(cow_record.get("feed") or 20.0),

@@ -40,7 +40,6 @@ class DashboardService:
         self.observation_service = observation_service or ObservationService(cow_service=self.cow_service)
 
     def build_dashboard(self) -> DashboardView:
-        print("[DEBUG] DashboardService.build_dashboard() called")
         log_event("debug_dashboard_service_build", source="build_dashboard")
         farms = self.repository.get_farms()
         cows = self.repository.get_cows()

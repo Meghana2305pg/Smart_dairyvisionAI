@@ -70,7 +70,6 @@ def _categorize_health_alerts(health_items: list[dict[str, Any]]) -> tuple[int, 
 
 def render_dashboard() -> None:
     """Render the dashboard using Design System tokens and reusable UI components."""
-    print("[DEBUG] Render #1/2/3 start")
     st.markdown(
         """
         <style>
@@ -129,7 +128,6 @@ def render_dashboard() -> None:
 
     with st.spinner("Loading dashboard..."):
         dashboard_service: DashboardService = st.session_state.dashboard_service
-        print("[DEBUG] dashboard_service object:", dashboard_service)
         dashboard = dashboard_service.build_dashboard()
         base_temp, base_hum = get_current_weather()
         submitted_cow_id = st.session_state.get("submitted_cow_id") or st.session_state.get("selected_cow_id")
@@ -161,7 +159,7 @@ def render_dashboard() -> None:
         health = get_health_alerts_for_input(input_row, base_temp=base_temp, base_hum=base_hum)
 
     cow_service = st.session_state.get("cow_service")
-    print("[DEBUG] dashboard render cows before branch:", len(live_cows) if 'live_cows' in locals() else 'n/a')
+
     live_cows = []
     if cow_service is not None:
         try:
@@ -173,12 +171,7 @@ def render_dashboard() -> None:
     if cow_count == 0 and live_cows:
         cow_count = len(live_cows)
 
-    print("[DEBUG] Render summary -> cows:", len(live_cows), "dashboard.herd:", dashboard.herd, "session_state keys:", sorted(list(st.session_state.keys())))
     log_event("debug_dashboard_render", cow_count=cow_count, live_cow_count=len(live_cows), branch="empty" if cow_count == 0 else "normal")
-    if cow_count == 0:
-        print("[DEBUG] EMPTY branch executed")
-    else:
-        print("[DEBUG] NORMAL branch executed")
 
     observation_count = int(dashboard.herd.get("observation_count", 0))
     recommendation_items = list(dashboard.recommendations or [])
