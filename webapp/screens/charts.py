@@ -43,11 +43,12 @@ def build_milk_production_chart(observations: list[dict[str, Any]]) -> go.Figure
     frame = _coerce_frame(observations)
     if frame.empty:
         return go.Figure()
-    frame = frame.dropna(subset=["timestamp"]).sort_values("timestamp")
-    frame["yield"] = pd.to_numeric(frame.get("yield", pd.Series([None] * len(frame))), errors="coerce")
     if "yield" not in frame.columns:
-        frame["yield"] = frame.get("feed", pd.Series([0] * len(frame)))
-    frame["yield"] = frame["yield"].fillna(0)
+        return go.Figure()
+    frame["yield"] = pd.to_numeric(frame["yield"], errors="coerce")
+    frame = frame.dropna(subset=["timestamp", "yield"]).sort_values("timestamp")
+    if frame.empty:
+        return go.Figure()
     figure = px.line(frame, x="timestamp", y="yield", markers=True, title="Milk Production Trend")
     figure.update_layout(template="plotly_white", margin=dict(l=20, r=20, t=40, b=20))
     return figure
@@ -57,14 +58,12 @@ def build_health_trend_chart(observations: list[dict[str, Any]]) -> go.Figure:
     frame = _coerce_frame(observations)
     if frame.empty:
         return go.Figure()
-    frame = frame.dropna(subset=["timestamp"]).sort_values("timestamp")
     if "health_status" not in frame.columns:
-        frame["health_status"] = 0
-    frame["health_status"] = (
-    pd.to_numeric(frame["health_status"], errors="coerce")
-    .fillna(0)
-    .astype(int)
-    )
+        return go.Figure()
+    frame["health_status"] = pd.to_numeric(frame["health_status"], errors="coerce")
+    frame = frame.dropna(subset=["timestamp", "health_status"]).sort_values("timestamp")
+    if frame.empty:
+        return go.Figure()
     figure = px.line(frame, x="timestamp", y="health_status", markers=True, title="Health Trend")
     figure.update_layout(template="plotly_white", margin=dict(l=20, r=20, t=40, b=20))
     figure.update_yaxes(title="Health status (0=healthy, 1=sick)")
@@ -75,17 +74,14 @@ def build_weather_vs_milk_chart(observations: list[dict[str, Any]]) -> go.Figure
     frame = _coerce_frame(observations)
     if frame.empty:
         return go.Figure()
-    frame = frame.dropna(subset=["timestamp"]).sort_values("timestamp")
-    if "temperature" not in frame.columns:
-        frame["temperature"] = 0
-    if "humidity" not in frame.columns:
-        frame["humidity"] = 0
-    if "yield" not in frame.columns:
-        if "feed" in frame.columns:
-            frame["yield"] = frame["feed"]
-        else:
-            frame["yield"] = 0
-    frame["yield"] = pd.to_numeric(frame["yield"], errors="coerce").fillna(0)
+    required_columns = {"timestamp", "temperature", "humidity", "yield"}
+    if not required_columns.issubset(frame.columns):
+        return go.Figure()
+    for column in ("temperature", "humidity", "yield"):
+        frame[column] = pd.to_numeric(frame[column], errors="coerce")
+    frame = frame.dropna(subset=list(required_columns)).sort_values("timestamp")
+    if frame.empty:
+        return go.Figure()
     figure = px.scatter(
         frame,
         x="temperature",
@@ -103,10 +99,12 @@ def build_prediction_history_chart(history: list[dict[str, Any]]) -> go.Figure:
     if not history:
         return go.Figure()
     frame = pd.DataFrame(history)
-    if "value" in frame.columns:
-        frame["value"] = pd.to_numeric(frame["value"], errors="coerce")
-    else:
-        frame["value"] = [0] * len(frame)
+    if "step" not in frame.columns or "value" not in frame.columns:
+        return go.Figure()
+    frame["value"] = pd.to_numeric(frame["value"], errors="coerce")
+    frame = frame.dropna(subset=["step", "value"])
+    if frame.empty:
+        return go.Figure()
     figure = px.line(frame, x="step", y="value", markers=True, title="Prediction History")
     figure.update_layout(template="plotly_white", margin=dict(l=20, r=20, t=40, b=20))
     return figure

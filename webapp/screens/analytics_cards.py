@@ -5,11 +5,20 @@ from typing import Any
 
 import streamlit as st
 
-from webapp.components.cards import info_card
+
+class _UnavailableMetric:
+    """Formats unavailable numeric metrics without fabricating a zero."""
+
+    def __format__(self, format_spec: str) -> str:
+        return "Unavailable"
 
 
 def render_summary_cards(summary: dict[str, Any]) -> None:
     """Render KPI cards for the analytics workspace."""
+    summary = dict(summary)
+    for key in ("average_milk_yield", "today_prediction"):
+        if summary.get(key) is None:
+            summary[key] = _UnavailableMetric()
     columns = st.columns(6, gap="small")
     card_specs = [
         ("🐄", "Total Cows", summary.get("total_cows", 0)),
@@ -21,4 +30,4 @@ def render_summary_cards(summary: dict[str, Any]) -> None:
     ]
     for column, (icon, title, value) in zip(columns, card_specs):
         with column:
-            info_card(f"{icon} {title}", str(value))
+            st.metric(label=f"{icon} {title}", value=str(value))

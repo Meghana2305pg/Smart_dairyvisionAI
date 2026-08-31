@@ -1,7 +1,16 @@
 import unittest
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
-from webapp.screens.analytics import build_analytics_context
+from webapp.screens.analytics import build_analytics_context, render_prediction_history
+from webapp.screens.analytics_cards import render_summary_cards
+from webapp.screens.charts import (
+    build_health_trend_chart,
+    build_milk_production_chart,
+    build_prediction_history_chart,
+    build_weather_vs_milk_chart,
+)
+from webapp.screens.filter_panel import render_filter_panel
 
 
 class AnalyticsWorkspaceTests(unittest.TestCase):
@@ -45,6 +54,128 @@ class AnalyticsWorkspaceTests(unittest.TestCase):
         self.assertEqual(payload["top_performing"][0]["cow_id"], "cow-001")
         self.assertEqual(payload["poor_performing"][0]["cow_id"], "cow-002")
         self.assertEqual(payload["insights"][0]["title"], "AI Insight")
+
+    def test_end_date_includes_observations_later_that_day(self) -> None:
+        payload = build_analytics_context(
+            cow_records=[{"cow_id": "cow-001", "name": "Mabel"}],
+            observations=[{
+                "cow_id": "cow-001",
+                "created_at": "2026-08-31T10:30:00+00:00",
+                "feed": 24.0,
+                "temperature": 27.0,
+                "humidity": 61.0,
+                "health_status": 1,
+            }],
+            predictions=[{"cow_id": "cow-001", "prediction": 28.4}],
+            date_range=("2026-08-31", "2026-08-31"),
+        )
+
+        self.assertEqual(len(payload["chart_observations"]), 1)
+
+    @patch("webapp.screens.filter_panel.st")
+    def test_default_date_range_includes_all_available_observations(self, streamlit_mock: MagicMock) -> None:
+        streamlit_mock.container.return_value = MagicMock()
+        streamlit_mock.columns.side_effect = ([MagicMock(), MagicMock()], [MagicMock(), MagicMock(), MagicMock()])
+        streamlit_mock.checkbox.return_value = True
+        streamlit_mock.selectbox.side_effect = ["All", "All", "All"]
+
+        start_date, end_date, *_ = render_filter_panel(["cow-001"], ["Holstein"], ["healthy", "sick"])
+
+        self.assertIsNone(start_date)
+        self.assertIsNone(end_date)
+        self.assertTrue(streamlit_mock.date_input.call_args_list[0].kwargs["disabled"])
+
+    def test_observation_charts_receive_available_observations(self) -> None:
+        payload = build_analytics_context(
+            cow_records=[{"cow_id": "cow-001"}],
+            observations=[{
+                "cow_id": "cow-001",
+                "created_at": "2026-08-07T10:38:24+00:00",
+                "temperature": 21.7,
+                "humidity": 93.0,
+                "health_status": 0,
+            }],
+            predictions=[{"cow_id": "cow-001", "prediction": 19.3}],
+            date_range=(None, None),
+        )
+
+        self.assertEqual(len(payload["chart_observations"]), 1)
+        self.assertEqual(len(build_milk_production_chart(payload["chart_observations"]).data), 1)
+        self.assertEqual(len(build_health_trend_chart(payload["chart_observations"]).data), 1)
+        self.assertEqual(len(build_weather_vs_milk_chart(payload["chart_observations"]).data), 1)
+
+    def test_latest_persisted_observation_health_status_is_used(self) -> None:
+        payload = build_analytics_context(
+            cow_records=[{"cow_id": "cow-001", "health_status": 0}],
+            observations=[
+                {"cow_id": "cow-001", "created_at": "2026-08-01T09:00:00Z", "health_status": 0},
+                {"cow_id": "cow-001", "created_at": "2026-08-02T09:00:00Z", "health_status": 1},
+            ],
+            predictions=[{"cow_id": "cow-001", "prediction": 22.0}],
+        )
+
+        self.assertEqual(payload["top_performing"][0]["health_status"], 1)
+
+    def test_missing_health_status_remains_unavailable(self) -> None:
+        payload = build_analytics_context(
+            cow_records=[{"cow_id": "cow-001", "health_status": 0}],
+            observations=[{"cow_id": "cow-001", "created_at": "2026-08-01T09:00:00Z"}],
+            predictions=[{"cow_id": "cow-001", "prediction": 22.0}],
+        )
+
+        self.assertIsNone(payload["top_performing"][0]["health_status"])
+
+    def test_feed_is_never_used_as_milk_yield(self) -> None:
+        payload = build_analytics_context(
+            cow_records=[{"cow_id": "cow-001"}],
+            observations=[{
+                "cow_id": "cow-001",
+                "created_at": "2026-08-01T09:00:00Z",
+                "feed": 24.0,
+                "temperature": 27.0,
+                "humidity": 61.0,
+                "health_status": 0,
+            }],
+            predictions=[],
+        )
+
+        self.assertIsNone(payload["chart_observations"][0]["yield"])
+        self.assertEqual(len(build_milk_production_chart(payload["chart_observations"]).data), 0)
+        self.assertEqual(len(build_weather_vs_milk_chart(payload["chart_observations"]).data), 0)
+
+    def test_empty_predictions_do_not_create_history_points(self) -> None:
+        payload = build_analytics_context(cow_records=[{"cow_id": "cow-001"}], predictions=[])
+
+        self.assertEqual(payload["history"], [])
+        self.assertEqual(len(build_prediction_history_chart(payload["history"]).data), 0)
+
+    def test_current_recomputed_predictions_are_excluded_from_history(self) -> None:
+        payload = build_analytics_context(
+            cow_records=[{"cow_id": "cow-001"}],
+            predictions=[{"cow_id": "cow-001", "prediction": 19.3, "source": "current_recomputed"}],
+        )
+
+        self.assertEqual(payload["history"], [])
+
+    @patch("webapp.screens.analytics.st.info")
+    @patch("webapp.screens.analytics.st.plotly_chart")
+    def test_prediction_history_empty_state_is_shown(self, plotly_chart_mock: MagicMock, info_mock: MagicMock) -> None:
+        render_prediction_history([])
+
+        plotly_chart_mock.assert_not_called()
+        info_mock.assert_called_once_with(
+            "No prediction history available yet. Historical prediction points will appear after predictions are persisted."
+        )
+
+    @patch("webapp.screens.analytics_cards.st")
+    def test_summary_cards_use_native_streamlit_metrics(self, streamlit_mock: MagicMock) -> None:
+        streamlit_mock.columns.return_value = [MagicMock() for _ in range(6)]
+
+        render_summary_cards({"total_cows": 2, "average_milk_yield": None, "today_prediction": None})
+
+        self.assertEqual(streamlit_mock.metric.call_count, 6)
+        values = [call.kwargs["value"] for call in streamlit_mock.metric.call_args_list]
+        self.assertIn("Unavailable L", values)
 
     def test_build_analytics_context_resolves_uuid_observations_to_predicted_cow_tags(self) -> None:
         payload = build_analytics_context(
