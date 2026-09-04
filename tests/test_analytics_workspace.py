@@ -214,6 +214,75 @@ class AnalyticsWorkspaceTests(unittest.TestCase):
         self.assertEqual(payload["top_performing"][0]["predicted_yield"], 28.4)
         self.assertEqual(payload["top_performing"][0]["cow_id"], "cow-001")
 
+    def test_build_analytics_context_handles_recommendation_objects(self) -> None:
+        """Test that Recommendation dataclass objects are safely extracted."""
+        from webapp.digital_twin.decision_support import Recommendation
+
+        # Use Recommendation objects instead of dicts
+        recommendation_obj = Recommendation(
+            message="Escalate the cow review and inspect feed and heat stress exposure.",
+            priority="high"
+        )
+
+        payload = build_analytics_context(
+            cow_records=[
+                {"cow_id": "cow-001", "name": "Mabel", "breed": "Holstein", "health_status": 0},
+                {"cow_id": "cow-002", "name": "Bess", "breed": "Jersey", "health_status": 1},
+            ],
+            observations=[
+                {
+                    "cow_id": "cow-001",
+                    "timestamp": datetime(2026, 1, 1, 8, 0, 0),
+                    "temperature": 27.0,
+                    "humidity": 61.0,
+                    "feed": 24.0,
+                    "weight": 520.0,
+                    "health_status": 0,
+                },
+                {
+                    "cow_id": "cow-002",
+                    "timestamp": datetime(2026, 1, 2, 8, 0, 0),
+                    "temperature": 35.0,
+                    "humidity": 72.0,
+                    "feed": 18.0,
+                    "weight": 480.0,
+                    "health_status": 1,
+                },
+            ],
+            predictions=[{"cow_id": "cow-001", "prediction": 28.4}, {"cow_id": "cow-002", "prediction": 16.2}],
+            health=[{"cow_id": "cow-001", "severity": "Low"}, {"cow_id": "cow-002", "severity": "High"}],
+            recommendations=[recommendation_obj],
+            weather=(30.0, 64.0),
+        )
+
+        # Verify the recommendation message was correctly extracted
+        self.assertEqual(payload["summary"]["total_cows"], 2)
+        self.assertEqual(payload["insights"][0]["title"], "AI Insight")
+        self.assertIn("Escalate the cow review", payload["insights"][0]["description"])
+
+    def test_build_analytics_context_handles_empty_recommendation_message(self) -> None:
+        """Test that fallback message is used when recommendation is empty/invalid."""
+        payload = build_analytics_context(
+            cow_records=[{"cow_id": "cow-001", "name": "Mabel"}],
+            observations=[{
+                "cow_id": "cow-001",
+                "timestamp": datetime(2026, 1, 1, 8, 0, 0),
+                "temperature": 27.0,
+                "humidity": 61.0,
+                "feed": 24.0,
+                "weight": 520.0,
+                "health_status": 0,
+            }],
+            predictions=[{"cow_id": "cow-001", "prediction": 28.4}],
+            health=[{"cow_id": "cow-001", "severity": "Low"}],
+            recommendations=[{}],  # Empty dict recommendation
+            weather=(28.0, 64.0),
+        )
+
+        # Verify fallback message is used
+        self.assertEqual(payload["insights"][0]["title"], "AI Insight")
+        self.assertEqual(payload["insights"][0]["description"], "Review the latest observations to improve herd performance.")
+
 
 if __name__ == "__main__":
     unittest.main()

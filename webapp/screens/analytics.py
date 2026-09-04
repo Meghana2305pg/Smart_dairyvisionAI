@@ -257,9 +257,20 @@ def build_analytics_context(
     insights: list[dict[str, Any]] = []
     if recommendation_list:
         first_recommendation = recommendation_list[0]
+        # Support both Recommendation objects (with .message attr) and dict recommendations
+        if hasattr(first_recommendation, "message"):
+            # Recommendation dataclass object
+            recommendation_text = first_recommendation.message
+        elif isinstance(first_recommendation, dict):
+            # Dictionary recommendation
+            recommendation_text = first_recommendation.get("message") or first_recommendation.get("recommendation")
+        else:
+            recommendation_text = None
+
+        recommendation_text = recommendation_text or "Review the latest observations to improve herd performance."
         insights.append({
             "title": "AI Insight",
-            "description": str(first_recommendation.get("message") or first_recommendation.get("recommendation") or "Review the latest observations to improve herd performance."),
+            "description": str(recommendation_text),
         })
     if current_weather[0] > 30:
         insights.append({
