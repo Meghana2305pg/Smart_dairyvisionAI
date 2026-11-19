@@ -1,0 +1,13 @@
+rank,feature,label,mean_abs_shap
+1,weight,Weight (kg),0.6907411
+2,age,Age (months),0.4599161
+3,age_weight_ratio,Age/Weight Ratio,0.17093731
+4,feed_weight_ratio,Feed/Weight Ratio,0.15072823
+5,feed,Feed (kg/day),0.14988817
+6,feed_thi_interaction,Feed×THI Interaction,0.13524158
+7,temp_humidity,Temp×Humidity,0.098206505
+8,humidity,Humidity (%),0.09158531
+9,thi,THI,0.083163105
+10,temperature,Temperature (°C),0.0743214
+11,thi_squared,THI²,0.042086173
+12,health_status,Health Status,0.019602846

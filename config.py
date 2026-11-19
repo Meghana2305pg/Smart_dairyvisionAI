@@ -37,7 +37,7 @@ RENAME_MAP = {
 # Engineered features are created inside feature_engineering.py
 BASE_FEATURES = ["age", "weight", "health_status", "feed",
                  "temperature", "humidity"]
-ENGINEERED_FEATURES = ["thi", "feed_weight_ratio", "feed_per_weight",
+ENGINEERED_FEATURES = ["thi", "feed_weight_ratio",
                        "temp_humidity", "thi_squared", "feed_thi_interaction",
                        "age_weight_ratio"]
 ALL_FEATURES  = BASE_FEATURES + ENGINEERED_FEATURES
@@ -96,8 +96,8 @@ SIM_TEMP_RANGE   = [18, 24, 30, 36, 42]        # °C  (comfort → severe heat)
 SIM_HUM_FIXED    = FALLBACK_HUM                # hold humidity at baseline
 SIM_PI_ALPHA     = 0.90                        # prediction interval coverage
 
-# ── THI thresholds (USDA / NRC 2001) ────────────────────────────────────────
-# Corrected formula: THI = (0.8 × T) + ((RH/100) × (T − 14.4)) + 16.4
+# ── THI thresholds (Mader et al., 2006 — standard Celsius form) ─────────────
+# Standard formula: THI = (0.8 × T) + ((RH/100) × (T − 14.4)) + 46.4
 # Standard physiological heat-stress boundaries for dairy cattle
 THI_COMFORT    = 60   # < 60: no stress (thermoneutral)
 THI_MILD       = 70   # 60–70: mild stress begins

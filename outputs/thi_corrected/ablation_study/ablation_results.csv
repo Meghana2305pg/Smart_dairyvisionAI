@@ -1,0 +1,4 @@
+experiment,n_features,test_mae,test_rmse,test_r2,test_mape,cv_mae_mean,cv_mae_std,cv_rmse_mean,cv_rmse_std,cv_r2_mean,cv_r2_std,cv_mape_mean,cv_mape_std
+A_Bio_Only,6,2.0394,2.5831,0.1826,9.8846,2.0107,0.0455,2.5349,0.0722,0.1561,0.0158,9.7848,0.2458
+B_Bio_Weather,9,2.0389,2.5822,0.1833,9.882,2.0131,0.0469,2.5394,0.0743,0.1532,0.0158,9.7972,0.2527
+C_Bio_Weather_THI,12,2.0379,2.5809,0.184,9.8757,2.0134,0.0458,2.5411,0.073,0.152,0.017,9.7983,0.2458

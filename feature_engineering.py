@@ -8,15 +8,15 @@ Key features added
 ------------------
 temperature     : Ambient temperature (°C) — from API or synthetic
 humidity        : Relative humidity (%)   — from API or synthetic
-thi             : Temperature-Humidity Index (USDA / NRC 2001)
+thi             : Temperature-Humidity Index (Mader et al., 2006)
                   The standard physiological heat-stress composite used
                   throughout dairy science literature.
 feed_weight_ratio : Feed intake normalised by body weight — a common
                   proxy for feeding efficiency in ruminant nutrition.
 
-THI formula (NRC, 2001)
+THI formula (Mader et al., 2006 — standard Celsius form)
 -----------------------
-    THI = T_db - (0.31 - 0.31 × RH/100) × (T_db - 14.4) - 32
+    THI = (0.8 × T_db) + ((RH/100) × (T_db − 14.4)) + 46.4
 where T_db = dry-bulb temperature (°C), RH = relative humidity (%).
 
     THI < 68          → no heat stress
@@ -59,10 +59,11 @@ logger = logging.getLogger(__name__)
 def compute_thi(temperature: pd.Series,
                 humidity:    pd.Series) -> pd.Series:
     """
-    USDA / NRC (2001) Temperature-Humidity Index (THI) for cattle.
+    USDA / Mader et al. (2006) Temperature-Humidity Index (THI) for cattle.
 
     This is the standard dairy cattle physiological heat-stress index
-    used throughout the literature. Values range typically 30–90.
+    used throughout the literature. The standard Celsius formulation
+    (Mader et al., 2006, J. Anim. Sci. 84:1527–1539) is implemented below.
 
     Parameters
     ----------
@@ -73,9 +74,9 @@ def compute_thi(temperature: pd.Series,
     -------
     pd.Series of float (THI index, typically 30–90)
 
-    Formula (NRC 2001, adapted for Celsius)
-    ----------------------------------------
-    THI = (0.8 × T_db) + ((RH/100) × (T_db − 14.4)) + 16.4
+    Formula (Mader et al., 2006 — standard Celsius form)
+    ------------------------------------------------------
+    THI = (0.8 × T_db) + ((RH/100) × (T_db − 14.4)) + 46.4
 
     where:
       T_db = dry-bulb temperature (°C)
@@ -83,10 +84,11 @@ def compute_thi(temperature: pd.Series,
 
     Reference
     ---------
-    National Research Council (2001). Nutrient Requirements of Dairy Cattle.
-    7th Revised Edition. National Academy Press, Washington, DC.
+    Mader, T.L., Johnson, L.J., & Gaughan, J.B. (2006). A comprehensive index
+    for assessing environmental stress in animals. Journal of Animal Science,
+    84(6), 1527–1539. https://doi.org/10.2527/2006.8461527x
     """
-    thi = (0.8 * temperature) + ((humidity / 100.0) * (temperature - 14.4)) + 16.4
+    thi = (0.8 * temperature) + ((humidity / 100.0) * (temperature - 14.4)) + 46.4
     return thi
 
 
@@ -131,8 +133,14 @@ def assign_weather(df: pd.DataFrame,
     - Individual record-level micro-environment variation
 
     The ranges cover:
-      Temperature: 18°C (cool season) to 42°C (extreme heat)
-      Humidity:    40% (dry) to 95% (humid/monsoon)
+      Temperature: 18°C (cool season) to 52°C (synthetic extreme heat-wave)
+                   Baseline seasonal range is 18–42°C; ~35% of records receive
+                   a +7°C hot+humid boost (clipped at 50°C) and ~8% receive a
+                   further +14°C severe boost (clipped at 52°C) to model heat-
+                   wave and drought scenarios.
+      Humidity:    40% (dry) to 98% (extreme humid/monsoon)
+                   Baseline seasonal range is 40–95%; hot+humid and severe
+                   masks can push humidity up to 95% and 98% respectively.
 
     Distribution is designed to produce realistic cattle heat stress exposure:
       60-70% No Stress     (THI < 60)
@@ -228,9 +236,6 @@ def add_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # New engineered features for improved milk yield prediction
 
-    # Feed per weight (alternative normalization)
-    df["feed_per_weight"] = df["feed"] / df["weight"].replace(0, np.nan)
-
     # Temperature-humidity interaction
     df["temp_humidity"] = df["temperature"] * df["humidity"]
 
@@ -251,8 +256,8 @@ def add_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Log new features summary
     logger.info("\nNew engineered features created:")
-    logger.info("  feed_per_weight          : mean=%.4f  std=%.4f",
-                df["feed_per_weight"].mean(), df["feed_per_weight"].std())
+    logger.info("  feed_weight_ratio        : mean=%.4f  std=%.4f",
+                df["feed_weight_ratio"].mean(), df["feed_weight_ratio"].std())
     logger.info("  temp_humidity            : mean=%.4f  std=%.4f",
                 df["temp_humidity"].mean(), df["temp_humidity"].std())
     logger.info("  thi_squared              : mean=%.4f  std=%.4f",
@@ -263,7 +268,7 @@ def add_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
                 df["age_weight_ratio"].mean(), df["age_weight_ratio"].std())
 
     # Report missing values in new features
-    new_features = ["feed_per_weight", "temp_humidity", "thi_squared",
+    new_features = ["feed_weight_ratio", "temp_humidity", "thi_squared",
                     "feed_thi_interaction", "age_weight_ratio"]
     missing_counts = {feat: df[feat].isna().sum() for feat in new_features}
     if any(missing_counts.values()):

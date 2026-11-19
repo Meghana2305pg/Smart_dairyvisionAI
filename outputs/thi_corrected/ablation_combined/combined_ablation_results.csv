@@ -1,0 +1,7 @@
+model,experiment,n_features,test_mae,test_rmse,test_r2,test_mape,cv_mae_mean,cv_mae_std,cv_r2_mean,cv_r2_std
+Linear Regression,A_Bio_Only,6,2.0394,2.5831,0.1826,9.8846,2.0107,0.0455,0.1561,0.0158
+Linear Regression,B_Bio_Weather,9,2.0389,2.5822,0.1833,9.882,2.0131,0.0469,0.1532,0.0158
+Linear Regression,C_Bio_Weather_THI,12,2.0379,2.5809,0.184,9.8757,2.0134,0.0458,0.152,0.017
+XGBoost,A_Bio_Only,6,2.0877,2.645,0.143,10.1304,2.0519,0.0338,0.1145,0.0384
+XGBoost,B_Bio_Weather,9,2.1061,2.6471,0.1417,10.2226,2.0637,0.0168,0.1112,0.0413
+XGBoost,C_Bio_Weather_THI,12,2.0944,2.6484,0.1408,10.1648,2.0699,0.0309,0.1012,0.0333
