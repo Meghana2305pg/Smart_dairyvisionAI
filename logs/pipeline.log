@@ -1,420 +1,136 @@
-2026-08-10 15:35:06,657  INFO      
+2026-11-19 23:21:17,575  INFO      
 ======================================================================
   STEP 1: Real-time weather fetch (Open-Meteo API)
 ======================================================================
-2026-08-10 15:35:06,657  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
-2026-08-10 15:35:13,153  INFO      [Weather] OK  â€” Temp: 28.4Â°C  Humidity: 57.0%
-2026-08-10 15:35:13,155  INFO      Ambient conditions: 28.4Â°C  57.0% RH
-2026-08-10 15:35:13,155  INFO      
+2026-11-19 23:21:17,577  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
+2026-11-19 23:21:18,926  INFO      [Weather] OK  — Temp: 20.8°C  Humidity: 48.0%
+2026-11-19 23:21:18,930  INFO      Ambient conditions: 20.8°C  48.0% RH
+2026-11-19 23:21:18,932  INFO      
 ======================================================================
   STEP 2: Data loading, merging & cleaning
 ======================================================================
-2026-08-10 15:35:13,172  INFO      Disease dataset  : 3000 rows Ã— 6 cols
-2026-08-10 15:35:13,172  INFO      Yield dataset    : 3000 rows Ã— 4 cols
-2026-08-10 15:35:13,179  INFO      After inner join : 3000 rows Ã— 9 cols
-2026-08-10 15:35:13,190  INFO      Health label: 35.2% diseased
-2026-08-10 15:35:13,200  INFO      After clean      : 3000 rows (dropped 0)
-2026-08-10 15:35:13,200  INFO      
+2026-11-19 23:21:18,995  INFO      Disease dataset  : 3000 rows × 6 cols
+2026-11-19 23:21:18,997  INFO      Yield dataset    : 3000 rows × 4 cols
+2026-11-19 23:21:19,028  INFO      After inner join : 3000 rows × 9 cols
+2026-11-19 23:21:19,039  INFO      Health label: 35.2% diseased
+2026-11-19 23:21:19,087  INFO      After clean      : 3000 rows (dropped 0)
+2026-11-19 23:21:19,089  INFO      
 ======================================================================
   STEP 3: Feature engineering (THI, feed/weight ratio, weather)
 ======================================================================
-2026-08-10 15:35:13,207  INFO      Weather assigned (seasonal) â€” Temp: 34.5 Â± 8.9Â°C (18.0â€“52.0)  Humidity: 73.9 Â± 16.9% (40.0â€“98.0)
-2026-08-10 15:35:13,209  INFO      THI range        : 33.4 â€“ 94.8  (mean 58.3)
-2026-08-10 15:35:13,211  INFO      THI stress dist  :
+2026-11-19 23:21:19,142  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
+2026-11-19 23:21:19,154  INFO      THI range        : 63.4 – 124.8  (mean 88.3)
+2026-11-19 23:21:19,180  INFO      THI stress dist  :
 thi
-No Stress    1701
-Mild          708
-Moderate      392
-Severe        158
-Emergency      41
-2026-08-10 15:35:13,211  INFO      
+Emergency    1299
+Severe        908
+Moderate      536
+Mild          257
+No Stress       0
+2026-11-19 23:21:19,181  INFO      
 New engineered features created:
-2026-08-10 15:35:13,212  INFO        feed_per_weight          : mean=0.0430  std=0.0120
-2026-08-10 15:35:13,213  INFO        temp_humidity            : mean=2488.3343  std=738.2167
-2026-08-10 15:35:13,213  INFO        thi_squared              : mean=3566.9015  std=1602.4610
-2026-08-10 15:35:13,213  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
-2026-08-10 15:35:13,213  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
-2026-08-10 15:35:13,215  INFO      Feature matrix   : 3000 rows Ã— 13 cols
-2026-08-10 15:35:13,215  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
-2026-08-10 15:35:13,252  INFO      Engineered dataset saved -> /Users/sanjana/Smart_dairyvisionAI/outputs/engineered_dataset.csv
-2026-08-10 15:35:13,252  INFO      Final feature matrix: 3000 rows Ã— 13 features
-2026-08-10 15:35:13,253  INFO      Features: ['age', 'weight', 'health_status', 'feed', 'temperature', 'humidity', 'thi', 'feed_weight_ratio', 'feed_per_weight', 'temp_humidity', 'thi_squared', 'feed_thi_interaction', 'age_weight_ratio']
-2026-08-10 15:35:13,253  INFO      
+2026-11-19 23:21:19,183  INFO        feed_weight_ratio        : mean=0.0430  std=0.0120
+2026-11-19 23:21:19,185  INFO        temp_humidity            : mean=2488.3343  std=738.2167
+2026-11-19 23:21:19,188  INFO        thi_squared              : mean=7962.0374  std=2388.0810
+2026-11-19 23:21:19,190  INFO        feed_thi_interaction     : mean=2037.3416  std=563.3795
+2026-11-19 23:21:19,204  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
+2026-11-19 23:21:19,220  INFO      Feature matrix   : 3000 rows × 12 cols
+2026-11-19 23:21:19,222  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
+2026-11-19 23:21:19,352  INFO      Engineered dataset saved -> C:\Users\megha\projects\Smart_dairyvisionAI\outputs\engineered_dataset.csv
+2026-11-19 23:21:19,352  INFO      Final feature matrix: 3000 rows × 12 features
+2026-11-19 23:21:19,354  INFO      Features: ['age', 'weight', 'health_status', 'feed', 'temperature', 'humidity', 'thi', 'feed_weight_ratio', 'temp_humidity', 'thi_squared', 'feed_thi_interaction', 'age_weight_ratio']
+2026-11-19 23:21:19,355  INFO      
 ======================================================================
   STEP 4: Cross-validated model training + statistical selection
 ======================================================================
-2026-08-10 15:35:15,304  INFO      === Loading data ===
-2026-08-10 15:35:15,308  INFO      Disease dataset  : 3000 rows Ã— 6 cols
-2026-08-10 15:35:15,308  INFO      Yield dataset    : 3000 rows Ã— 4 cols
-2026-08-10 15:35:15,308  INFO      After inner join : 3000 rows Ã— 9 cols
-2026-08-10 15:35:15,309  INFO      Health label: 35.2% diseased
-2026-08-10 15:35:15,311  INFO      After clean      : 3000 rows (dropped 0)
-2026-08-10 15:35:15,311  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
-2026-08-10 15:35:16,620  INFO      [Weather] OK  â€” Temp: 28.4Â°C  Humidity: 57.0%
-2026-08-10 15:35:16,630  INFO      Weather assigned (seasonal) â€” Temp: 34.5 Â± 8.9Â°C (18.0â€“52.0)  Humidity: 73.9 Â± 16.9% (40.0â€“98.0)
-2026-08-10 15:35:16,631  INFO      THI range        : 33.4 â€“ 94.8  (mean 58.3)
-2026-08-10 15:35:16,632  INFO      THI stress dist  :
+2026-11-19 23:21:23,419  INFO      === Loading data ===
+2026-11-19 23:21:23,425  INFO      Disease dataset  : 3000 rows × 6 cols
+2026-11-19 23:21:23,426  INFO      Yield dataset    : 3000 rows × 4 cols
+2026-11-19 23:21:23,430  INFO      After inner join : 3000 rows × 9 cols
+2026-11-19 23:21:23,434  INFO      Health label: 35.2% diseased
+2026-11-19 23:21:23,446  INFO      After clean      : 3000 rows (dropped 0)
+2026-11-19 23:21:23,448  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
+2026-11-19 23:21:24,448  INFO      [Weather] OK  — Temp: 20.8°C  Humidity: 48.0%
+2026-11-19 23:21:24,487  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
+2026-11-19 23:21:24,499  INFO      THI range        : 63.4 – 124.8  (mean 88.3)
+2026-11-19 23:21:24,508  INFO      THI stress dist  :
 thi
-No Stress    1701
-Mild          708
-Moderate      392
-Severe        158
-Emergency      41
-2026-08-10 15:35:16,632  INFO      
+Emergency    1299
+Severe        908
+Moderate      536
+Mild          257
+No Stress       0
+2026-11-19 23:21:24,509  INFO      
 New engineered features created:
-2026-08-10 15:35:16,633  INFO        feed_per_weight          : mean=0.0430  std=0.0120
-2026-08-10 15:35:16,634  INFO        temp_humidity            : mean=2488.3343  std=738.2167
-2026-08-10 15:35:16,635  INFO        thi_squared              : mean=3566.9015  std=1602.4610
-2026-08-10 15:35:16,635  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
-2026-08-10 15:35:16,637  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
-2026-08-10 15:35:16,642  INFO      Feature matrix   : 3000 rows Ã— 13 cols
-2026-08-10 15:35:16,643  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
-2026-08-10 15:35:16,684  INFO      Engineered dataset saved -> /Users/sanjana/Smart_dairyvisionAI/outputs/engineered_dataset.csv
-2026-08-10 15:35:16,684  INFO      Features  : ['age', 'weight', 'health_status', 'feed', 'temperature', 'humidity', 'thi', 'feed_weight_ratio', 'feed_per_weight', 'temp_humidity', 'thi_squared', 'feed_thi_interaction', 'age_weight_ratio']
-2026-08-10 15:35:16,684  INFO      Samples   : 3000
-2026-08-10 15:35:16,685  INFO      Target    : mean=21.20  std=2.78
-2026-08-10 15:35:16,685  INFO      === Hyperparameter tuning (RandomizedSearchCV) ===
-2026-08-10 15:35:16,685  INFO        Tuning XGBoost ...
-2026-08-10 15:35:32,450  INFO        Best XGBoost params: {'subsample': 0.8, 'reg_lambda': 2.0, 'reg_alpha': 0.5, 'n_estimators': 300, 'min_child_weight': 1, 'max_depth': 3, 'learning_rate': 0.01, 'colsample_bytree': 1.0}  (CV RÂ²=0.1811)
-2026-08-10 15:35:32,451  INFO        Tuning Random Forest ...
-2026-08-10 15:36:00,792  INFO        Best Random Forest params: {'n_estimators': 400, 'min_samples_leaf': 4, 'max_features': 'sqrt', 'max_depth': 8}  (CV RÂ²=0.1669)
-2026-08-10 15:36:00,794  INFO      Tuning results saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/tuning_results.json
-2026-08-10 15:36:00,794  INFO      === 5-fold cross-validation ===
-2026-08-10 15:36:00,811  INFO        Naive Baseline         RÂ²=-0.0042 Â± 0.0036   MAE=2.234 Â± 0.069   RMSE=2.784 Â± 0.075
-2026-08-10 15:36:00,841  INFO        Linear Regression      RÂ²=0.1594 Â± 0.0184   MAE=2.017 Â± 0.056   RMSE=2.547 Â± 0.062
-2026-08-10 15:36:00,914  INFO        Decision Tree          RÂ²=0.0142 Â± 0.0202   MAE=2.190 Â± 0.089   RMSE=2.759 Â± 0.083
-2026-08-10 15:36:02,941  INFO        Random Forest          RÂ²=0.1669 Â± 0.0144   MAE=2.011 Â± 0.070   RMSE=2.536 Â± 0.079
-2026-08-10 15:36:04,506  INFO        XGBoost                RÂ²=0.1811 Â± 0.0089   MAE=1.990 Â± 0.062   RMSE=2.514 Â± 0.068
-2026-08-10 15:36:04,526  INFO      CV results saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/cv_results.csv
-2026-08-10 15:36:04,552  INFO      
-=== Model ranking by mean CV RÂ² ===
+2026-11-19 23:21:24,515  INFO        feed_weight_ratio        : mean=0.0430  std=0.0120
+2026-11-19 23:21:24,518  INFO        temp_humidity            : mean=2488.3343  std=738.2167
+2026-11-19 23:21:24,521  INFO        thi_squared              : mean=7962.0374  std=2388.0810
+2026-11-19 23:21:24,522  INFO        feed_thi_interaction     : mean=2037.3416  std=563.3795
+2026-11-19 23:21:24,523  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
+2026-11-19 23:21:24,538  INFO      Feature matrix   : 3000 rows × 12 cols
+2026-11-19 23:21:24,540  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
+2026-11-19 23:21:24,632  INFO      Engineered dataset saved -> C:\Users\megha\projects\Smart_dairyvisionAI\outputs\engineered_dataset.csv
+2026-11-19 23:21:24,632  INFO      Features  : ['age', 'weight', 'health_status', 'feed', 'temperature', 'humidity', 'thi', 'feed_weight_ratio', 'temp_humidity', 'thi_squared', 'feed_thi_interaction', 'age_weight_ratio']
+2026-11-19 23:21:24,633  INFO      Samples   : 3000
+2026-11-19 23:21:24,634  INFO      Target    : mean=21.20  std=2.78
+2026-11-19 23:21:24,634  INFO      === Hyperparameter tuning (RandomizedSearchCV) ===
+2026-11-19 23:21:24,635  INFO        Tuning XGBoost ...
+2026-11-19 23:22:03,277  INFO        Best XGBoost params: {'subsample': 0.8, 'reg_lambda': 2.0, 'reg_alpha': 0.5, 'n_estimators': 300, 'min_child_weight': 1, 'max_depth': 3, 'learning_rate': 0.01, 'colsample_bytree': 1.0}  (CV R²=0.1804)
+2026-11-19 23:22:03,278  INFO        Tuning Random Forest ...
+2026-11-19 23:23:16,801  INFO        Best Random Forest params: {'n_estimators': 400, 'min_samples_leaf': 4, 'max_features': 'sqrt', 'max_depth': 8}  (CV R²=0.1684)
+2026-11-19 23:23:16,862  INFO      === 5-fold cross-validation ===
+2026-11-19 23:23:17,050  INFO        Naive Baseline         R²=-0.0042 ± 0.0036   MAE=2.234 ± 0.069   RMSE=2.784 ± 0.075
+2026-11-19 23:23:17,354  INFO        Linear Regression      R²=0.1599 ± 0.0180   MAE=2.017 ± 0.056   RMSE=2.546 ± 0.062
+2026-11-19 23:23:17,782  INFO        Decision Tree          R²=0.0049 ± 0.0285   MAE=2.191 ± 0.093   RMSE=2.772 ± 0.099
+2026-11-19 23:23:30,517  INFO        Random Forest          R²=0.1684 ± 0.0142   MAE=2.009 ± 0.069   RMSE=2.534 ± 0.076
+2026-11-19 23:23:32,232  INFO        XGBoost                R²=0.1800 ± 0.0091   MAE=1.991 ± 0.062   RMSE=2.516 ± 0.068
+2026-11-19 23:23:32,294  INFO      
+=== Model ranking by mean CV R² ===
                        mean       std
 Model                                
-XGBoost            0.181124  0.009938
-Random Forest      0.166950  0.016129
-Linear Regression  0.159384  0.020623
-Decision Tree      0.014180  0.022555
+XGBoost            0.180028  0.010200
+Random Forest      0.168352  0.015921
+Linear Regression  0.159933  0.020098
+Decision Tree      0.004933  0.031832
 Naive Baseline    -0.004192  0.004017
-2026-08-10 15:36:04,554  INFO      
+2026-11-19 23:23:32,297  INFO      
 === Wilcoxon signed-rank test (best vs. others) ===
-2026-08-10 15:36:04,563  INFO        XGBoost vs Random Forest          : W=15.00  p=0.0312  âœ“ significant
-2026-08-10 15:36:04,564  INFO        XGBoost vs Linear Regression      : W=15.00  p=0.0312  âœ“ significant
-2026-08-10 15:36:04,564  INFO        XGBoost vs Decision Tree          : W=15.00  p=0.0312  âœ“ significant
-2026-08-10 15:36:04,565  INFO        XGBoost vs Naive Baseline         : W=15.00  p=0.0312  âœ“ significant
-2026-08-10 15:36:04,565  INFO      
+2026-11-19 23:23:32,486  INFO      
 Best model: XGBoost
-2026-08-10 15:36:04,803  INFO      Best model saved â†’ /Users/sanjana/Smart_dairyvisionAI/models/best_milk_model.pkl
-2026-08-10 15:36:04,810  INFO      
+2026-11-19 23:23:32,910  INFO      
 ======================================================================
   STEP 5: Model evaluation, diagnostics & plots
 ======================================================================
-2026-08-10 15:36:05,400  INFO      === Loading data ===
-2026-08-10 15:36:05,406  INFO      Disease dataset  : 3000 rows Ã— 6 cols
-2026-08-10 15:36:05,406  INFO      Yield dataset    : 3000 rows Ã— 4 cols
-2026-08-10 15:36:05,407  INFO      After inner join : 3000 rows Ã— 9 cols
-2026-08-10 15:36:05,408  INFO      Health label: 35.2% diseased
-2026-08-10 15:36:05,412  INFO      After clean      : 3000 rows (dropped 0)
-2026-08-10 15:36:05,413  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
-2026-08-10 15:36:06,275  INFO      [Weather] OK  â€” Temp: 28.4Â°C  Humidity: 57.0%
-2026-08-10 15:36:06,348  INFO      Weather assigned (seasonal) â€” Temp: 34.5 Â± 8.9Â°C (18.0â€“52.0)  Humidity: 73.9 Â± 16.9% (40.0â€“98.0)
-2026-08-10 15:36:06,362  INFO      THI range        : 33.4 â€“ 94.8  (mean 58.3)
-2026-08-10 15:36:06,370  INFO      THI stress dist  :
+2026-11-19 23:23:34,485  INFO      === Loading data ===
+2026-11-19 23:23:34,498  INFO      Disease dataset  : 3000 rows × 6 cols
+2026-11-19 23:23:34,498  INFO      Yield dataset    : 3000 rows × 4 cols
+2026-11-19 23:23:34,503  INFO      After inner join : 3000 rows × 9 cols
+2026-11-19 23:23:34,506  INFO      Health label: 35.2% diseased
+2026-11-19 23:23:34,519  INFO      After clean      : 3000 rows (dropped 0)
+2026-11-19 23:23:34,520  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
+2026-11-19 23:23:39,731  INFO      [Weather] OK  — Temp: 20.8°C  Humidity: 48.0%
+2026-11-19 23:23:39,747  INFO      Weather assigned (seasonal) — Temp: 34.5 ± 8.9°C (18.0–52.0)  Humidity: 73.9 ± 16.9% (40.0–98.0)
+2026-11-19 23:23:39,752  INFO      THI range        : 63.4 – 124.8  (mean 88.3)
+2026-11-19 23:23:39,757  INFO      THI stress dist  :
 thi
-No Stress    1701
-Mild          708
-Moderate      392
-Severe        158
-Emergency      41
-2026-08-10 15:36:06,371  INFO      
+Emergency    1299
+Severe        908
+Moderate      536
+Mild          257
+No Stress       0
+2026-11-19 23:23:39,759  INFO      
 New engineered features created:
-2026-08-10 15:36:06,371  INFO        feed_per_weight          : mean=0.0430  std=0.0120
-2026-08-10 15:36:06,372  INFO        temp_humidity            : mean=2488.3343  std=738.2167
-2026-08-10 15:36:06,372  INFO        thi_squared              : mean=3566.9015  std=1602.4610
-2026-08-10 15:36:06,373  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
-2026-08-10 15:36:06,373  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
-2026-08-10 15:36:06,379  INFO      Feature matrix   : 3000 rows Ã— 13 cols
-2026-08-10 15:36:06,380  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
-2026-08-10 15:36:06,471  INFO      Engineered dataset saved -> /Users/sanjana/Smart_dairyvisionAI/outputs/engineered_dataset.csv
-2026-08-10 15:36:08,580  INFO      Saved publication figure -> /Users/sanjana/Smart_dairyvisionAI/research_outputs/figures/model_test_error_metrics.png
-2026-08-10 15:36:08,580  INFO      Saved research table -> /Users/sanjana/Smart_dairyvisionAI/research_outputs/tables/model_test_error_metrics.csv
-2026-08-10 15:36:08,587  INFO      Loaded model: XGBRegressor
-2026-08-10 15:36:08,858  INFO      === Hold-out test metrics ===
-2026-08-10 15:36:08,859  INFO        MAE          : 2.0348
-2026-08-10 15:36:08,859  INFO        RMSE         : 2.5746
-2026-08-10 15:36:08,859  INFO        R2           : 0.1880
-2026-08-10 15:36:08,859  INFO        MAPE_pct     : 9.8641
-2026-08-10 15:36:08,863  INFO      Residual normality (Shapiro-Wilk): stat=0.9962  p=0.1574  â†’ Normal (p > 0.05)
-2026-08-10 15:36:09,578  INFO      Feature importance (permutation):
-                      MDI_importance  Perm_mean  Perm_std
-weight                      0.282482   0.252968  0.024838
-age                         0.152431   0.046197  0.013011
-feed_thi_interaction        0.060761   0.001744  0.001053
-feed                        0.059420   0.000777  0.001406
-feed_weight_ratio           0.057616   0.000713  0.000741
-age_weight_ratio            0.112880   0.000386  0.004889
-feed_per_weight             0.000000   0.000000  0.000000
-thi_squared                 0.000000   0.000000  0.000000
-health_status               0.048232  -0.000118  0.000126
-thi                         0.066325  -0.000714  0.000814
-temperature                 0.047908  -0.001151  0.000661
-humidity                    0.057567  -0.001906  0.000679
-temp_humidity               0.054378  -0.002176  0.000478
-2026-08-10 15:36:09,663  INFO      Chromium init'ed with kwargs {}
-2026-08-10 15:36:09,691  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 15:36:09,691  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp_x33jytw.
-2026-08-10 15:36:09,693  INFO      Opening browser.
-2026-08-10 15:36:09,693  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmphfuw31o6.
-2026-08-10 15:36:09,693  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmphfuw31o6
-2026-08-10 15:36:12,826  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp_x33jytw/index.html
-2026-08-10 15:36:14,348  INFO      Getting tab from queue (has 1)
-2026-08-10 15:36:14,348  INFO      Got CC0E
-2026-08-10 15:36:14,431  INFO      Reloading tab CC0E before return.
-2026-08-10 15:36:14,560  INFO      Putting tab CC0E back (queue size: 0).
-2026-08-10 15:36:14,560  INFO      Waiting for all cleanups to finish.
-2026-08-10 15:36:14,561  INFO      Exiting Kaleido.
-2026-08-10 15:36:14,562  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:14,563  INFO      shutil.rmtree worked.
-2026-08-10 15:36:14,563  INFO      Closing browser.
-2026-08-10 15:36:14,567  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:14,567  INFO      shutil.rmtree worked.
-2026-08-10 15:36:14,567  INFO      Closing browser.
-2026-08-10 15:36:14,567  INFO      Cancelling tasks.
-2026-08-10 15:36:14,567  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:14,706  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:14,707  INFO      shutil.rmtree worked.
-2026-08-10 15:36:14,707  INFO      Cancelling tasks.
-2026-08-10 15:36:14,707  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:14,708  INFO      Saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/predicted_vs_actual.png
-2026-08-10 15:36:14,723  INFO      Chromium init'ed with kwargs {}
-2026-08-10 15:36:14,724  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 15:36:14,724  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpv7to73g_.
-2026-08-10 15:36:14,724  INFO      Opening browser.
-2026-08-10 15:36:14,725  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpd05klyvt.
-2026-08-10 15:36:14,725  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpd05klyvt
-2026-08-10 15:36:15,962  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpv7to73g_/index.html
-2026-08-10 15:36:17,889  INFO      Getting tab from queue (has 1)
-2026-08-10 15:36:17,889  INFO      Got A97D
-2026-08-10 15:36:17,945  INFO      Reloading tab A97D before return.
-2026-08-10 15:36:18,075  INFO      Putting tab A97D back (queue size: 0).
-2026-08-10 15:36:18,076  INFO      Waiting for all cleanups to finish.
-2026-08-10 15:36:18,076  INFO      Exiting Kaleido.
-2026-08-10 15:36:18,076  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:18,077  INFO      shutil.rmtree worked.
-2026-08-10 15:36:18,077  INFO      Closing browser.
-2026-08-10 15:36:18,078  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:18,078  INFO      shutil.rmtree worked.
-2026-08-10 15:36:18,078  INFO      Closing browser.
-2026-08-10 15:36:18,078  INFO      Cancelling tasks.
-2026-08-10 15:36:18,078  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:18,222  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:18,222  INFO      shutil.rmtree worked.
-2026-08-10 15:36:18,222  INFO      Cancelling tasks.
-2026-08-10 15:36:18,223  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:18,223  INFO      Saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/residuals_vs_fitted.png
-2026-08-10 15:36:18,230  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:18,231  INFO      shutil.rmtree worked.
-2026-08-10 15:36:18,352  INFO      Chromium init'ed with kwargs {}
-2026-08-10 15:36:18,353  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 15:36:18,353  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp29i6_63v.
-2026-08-10 15:36:18,353  INFO      Opening browser.
-2026-08-10 15:36:18,353  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp3v5nguvd.
-2026-08-10 15:36:18,353  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp3v5nguvd
-2026-08-10 15:36:19,481  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp29i6_63v/index.html
-2026-08-10 15:36:20,495  INFO      Getting tab from queue (has 1)
-2026-08-10 15:36:20,496  INFO      Got 10FA
-2026-08-10 15:36:20,550  INFO      Reloading tab 10FA before return.
-2026-08-10 15:36:20,684  INFO      Putting tab 10FA back (queue size: 0).
-2026-08-10 15:36:20,684  INFO      Waiting for all cleanups to finish.
-2026-08-10 15:36:20,684  INFO      Exiting Kaleido.
-2026-08-10 15:36:20,685  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:20,685  INFO      shutil.rmtree worked.
-2026-08-10 15:36:20,685  INFO      Closing browser.
-2026-08-10 15:36:20,687  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:20,687  INFO      shutil.rmtree worked.
-2026-08-10 15:36:20,687  INFO      Closing browser.
-2026-08-10 15:36:20,687  INFO      Cancelling tasks.
-2026-08-10 15:36:20,687  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:20,823  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:20,823  INFO      shutil.rmtree worked.
-2026-08-10 15:36:20,823  INFO      Cancelling tasks.
-2026-08-10 15:36:20,823  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:20,824  INFO      Saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/residual_histogram.png
-2026-08-10 15:36:20,832  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:20,832  INFO      shutil.rmtree worked.
-2026-08-10 15:36:20,832  INFO      Chromium init'ed with kwargs {}
-2026-08-10 15:36:20,833  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 15:36:20,833  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpo9lxxedy.
-2026-08-10 15:36:20,834  INFO      Opening browser.
-2026-08-10 15:36:20,834  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpv0w9d8fb.
-2026-08-10 15:36:20,834  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpv0w9d8fb
-2026-08-10 15:36:22,003  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpo9lxxedy/index.html
-2026-08-10 15:36:23,114  INFO      Getting tab from queue (has 1)
-2026-08-10 15:36:23,114  INFO      Got 2F31
-2026-08-10 15:36:23,184  INFO      Reloading tab 2F31 before return.
-2026-08-10 15:36:23,317  INFO      Putting tab 2F31 back (queue size: 0).
-2026-08-10 15:36:23,317  INFO      Waiting for all cleanups to finish.
-2026-08-10 15:36:23,317  INFO      Exiting Kaleido.
-2026-08-10 15:36:23,318  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:23,318  INFO      shutil.rmtree worked.
-2026-08-10 15:36:23,318  INFO      Closing browser.
-2026-08-10 15:36:23,322  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:23,322  INFO      shutil.rmtree worked.
-2026-08-10 15:36:23,322  INFO      Closing browser.
-2026-08-10 15:36:23,322  INFO      Cancelling tasks.
-2026-08-10 15:36:23,322  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:23,468  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:23,468  INFO      shutil.rmtree worked.
-2026-08-10 15:36:23,468  INFO      Cancelling tasks.
-2026-08-10 15:36:23,468  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:23,469  INFO      Saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/feature_importance.png
-2026-08-10 15:36:23,503  INFO      Chromium init'ed with kwargs {}
-2026-08-10 15:36:23,504  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 15:36:23,504  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp_pwgphgz.
-2026-08-10 15:36:23,505  INFO      Opening browser.
-2026-08-10 15:36:23,505  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpjgi95i4h.
-2026-08-10 15:36:23,505  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpjgi95i4h
-2026-08-10 15:36:24,702  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp_pwgphgz/index.html
-2026-08-10 15:36:25,979  INFO      Getting tab from queue (has 1)
-2026-08-10 15:36:25,979  INFO      Got CAED
-2026-08-10 15:36:26,021  INFO      Reloading tab CAED before return.
-2026-08-10 15:36:26,155  INFO      Putting tab CAED back (queue size: 0).
-2026-08-10 15:36:26,155  INFO      Waiting for all cleanups to finish.
-2026-08-10 15:36:26,155  INFO      Exiting Kaleido.
-2026-08-10 15:36:26,156  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:26,156  INFO      shutil.rmtree worked.
-2026-08-10 15:36:26,156  INFO      Closing browser.
-2026-08-10 15:36:26,157  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:26,157  INFO      shutil.rmtree worked.
-2026-08-10 15:36:26,157  INFO      Closing browser.
-2026-08-10 15:36:26,157  INFO      Cancelling tasks.
-2026-08-10 15:36:26,158  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:26,297  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:26,297  INFO      shutil.rmtree worked.
-2026-08-10 15:36:26,297  INFO      Cancelling tasks.
-2026-08-10 15:36:26,297  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:26,298  INFO      Saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/cv_r2_boxplot.png
-2026-08-10 15:36:26,307  INFO      Generating SHAP explainability outputs
-2026-08-10 15:36:26,486  INFO      Loading model from /Users/sanjana/Smart_dairyvisionAI/models/best_milk_model.pkl
-2026-08-10 15:36:26,495  ERROR     The `shap` package is not available in this environment. Install it with `pip install shap` to generate SHAP plots.
-2026-08-10 15:36:26,496  ERROR     SHAP explainability generation failed: The `shap` package is not available in this environment. Install it with `pip install shap` to generate SHAP plots.
-Traceback (most recent call last):
-  File "/Users/sanjana/Smart_dairyvisionAI/run_pipeline.py", line 103, in main
-    generate_shap_reports(X, df_full=df_full)
-    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
-  File "/Users/sanjana/Smart_dairyvisionAI/explainability.py", line 83, in generate_shap_reports
-    raise RuntimeError(msg)
-RuntimeError: The `shap` package is not available in this environment. Install it with `pip install shap` to generate SHAP plots.
-2026-08-10 15:36:26,497  INFO      
-======================================================================
-  STEP 6: Anomaly detection and reporting
-======================================================================
-2026-08-10 15:36:27,268  INFO      Anomaly outputs saved: /Users/sanjana/Smart_dairyvisionAI/outputs/anomaly_report.csv, /Users/sanjana/Smart_dairyvisionAI/outputs/anomaly_summary.md, /Users/sanjana/Smart_dairyvisionAI/outputs/anomaly_visualization.png
-2026-08-10 15:36:27,268  INFO      
-======================================================================
-  STEP 7: Health alerts and decision support
-======================================================================
-2026-08-10 15:36:27,319  INFO      
-======================================================================
-  STEP 8: Digital twin what-if simulation
-======================================================================
-2026-08-10 15:36:27,321  INFO      === Building feature matrix ===
-2026-08-10 15:36:27,324  INFO      Disease dataset  : 3000 rows Ã— 6 cols
-2026-08-10 15:36:27,324  INFO      Yield dataset    : 3000 rows Ã— 4 cols
-2026-08-10 15:36:27,326  INFO      After inner join : 3000 rows Ã— 9 cols
-2026-08-10 15:36:27,326  INFO      Health label: 35.2% diseased
-2026-08-10 15:36:27,329  INFO      After clean      : 3000 rows (dropped 0)
-2026-08-10 15:36:27,329  INFO      [Weather] Requesting: https://api.open-meteo.com/v1/forecast?latitude=12.97&longitude=77.59&current=temperature_2m,relative_humidity_2m&wind_speed_unit=ms
-2026-08-10 15:36:27,972  INFO      [Weather] OK  â€” Temp: 28.4Â°C  Humidity: 57.0%
-2026-08-10 15:36:27,980  INFO      Weather assigned (seasonal) â€” Temp: 34.5 Â± 8.9Â°C (18.0â€“52.0)  Humidity: 73.9 Â± 16.9% (40.0â€“98.0)
-2026-08-10 15:36:27,982  INFO      THI range        : 33.4 â€“ 94.8  (mean 58.3)
-2026-08-10 15:36:27,983  INFO      THI stress dist  :
-thi
-No Stress    1701
-Mild          708
-Moderate      392
-Severe        158
-Emergency      41
-2026-08-10 15:36:27,983  INFO      
-New engineered features created:
-2026-08-10 15:36:27,983  INFO        feed_per_weight          : mean=0.0430  std=0.0120
-2026-08-10 15:36:27,984  INFO        temp_humidity            : mean=2488.3343  std=738.2167
-2026-08-10 15:36:27,984  INFO        thi_squared              : mean=3566.9015  std=1602.4610
-2026-08-10 15:36:27,984  INFO        feed_thi_interaction     : mean=1344.9356  std=440.2856
-2026-08-10 15:36:27,984  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
-2026-08-10 15:36:27,985  INFO      Feature matrix   : 3000 rows Ã— 13 cols
-2026-08-10 15:36:27,985  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
-2026-08-10 15:36:28,030  INFO      Engineered dataset saved -> /Users/sanjana/Smart_dairyvisionAI/outputs/engineered_dataset.csv
-2026-08-10 15:36:28,033  INFO      Loaded best model: XGBRegressor
-2026-08-10 15:36:28,033  INFO      === Fitting interval RF ===
-2026-08-10 15:36:28,669  INFO      Interval RF fitted  â€” OOB RÂ²=0.0000 (if oob_score=True)
-2026-08-10 15:36:28,669  INFO      === Running simulation grid ===
-2026-08-10 15:36:28,669  INFO        Feed range : [10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34] kg
-2026-08-10 15:36:28,669  INFO        Temp range : [18, 24, 30, 36, 42] Â°C
-2026-08-10 15:36:30,444  INFO      Simulation complete â€” 65 grid points
-2026-08-10 15:36:30,444  INFO      Simulation results saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/simulation_results.csv
-2026-08-10 15:36:30,446  INFO      Monotonicity check:
- Temp_C  N_violations  Monotone  Max_reversal
-     18             1     False         0.286
-     24             1     False         0.310
-     30             1     False         0.310
-     36             1     False         0.273
-     42             1     False         0.270
-2026-08-10 15:36:30,446  INFO      Monotonicity report saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/monotonicity_report.txt
-2026-08-10 15:36:30,446  INFO      === Generating plots ===
-2026-08-10 15:36:30,455  INFO      Chromium init'ed with kwargs {}
-2026-08-10 15:36:30,456  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 15:36:30,456  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp7cfyh3jo.
-2026-08-10 15:36:30,456  INFO      Opening browser.
-2026-08-10 15:36:30,457  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpa9i89own.
-2026-08-10 15:36:30,457  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmpa9i89own
-2026-08-10 15:36:31,725  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp7cfyh3jo/index.html
-2026-08-10 15:36:33,110  INFO      Getting tab from queue (has 1)
-2026-08-10 15:36:33,110  INFO      Got FEA6
-2026-08-10 15:36:33,175  INFO      Reloading tab FEA6 before return.
-2026-08-10 15:36:33,306  INFO      Putting tab FEA6 back (queue size: 0).
-2026-08-10 15:36:33,306  INFO      Waiting for all cleanups to finish.
-2026-08-10 15:36:33,306  INFO      Exiting Kaleido.
-2026-08-10 15:36:33,310  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:33,310  INFO      shutil.rmtree worked.
-2026-08-10 15:36:33,310  INFO      Closing browser.
-2026-08-10 15:36:33,311  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:33,312  INFO      shutil.rmtree worked.
-2026-08-10 15:36:33,312  INFO      Closing browser.
-2026-08-10 15:36:33,312  INFO      Cancelling tasks.
-2026-08-10 15:36:33,312  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:33,455  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:33,455  INFO      shutil.rmtree worked.
-2026-08-10 15:36:33,455  INFO      Cancelling tasks.
-2026-08-10 15:36:33,455  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:33,456  INFO      Saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/simulation_feedlines.png
-2026-08-10 15:36:33,783  INFO      Saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/simulation_heatmap.png
-2026-08-10 15:36:33,802  INFO      Chromium init'ed with kwargs {}
-2026-08-10 15:36:33,811  INFO      Found chromium path: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
-2026-08-10 15:36:33,812  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp0i_cdtl2.
-2026-08-10 15:36:33,812  INFO      Opening browser.
-2026-08-10 15:36:33,812  INFO      Temp directory created: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp4v0b91a5.
-2026-08-10 15:36:33,812  INFO      Temporary directory at: /var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp4v0b91a5
-2026-08-10 15:36:34,972  INFO      Conforming 1 to file:///var/folders/v8/18t7vnpn4nd5v73xlkdxknjc0000gn/T/tmp0i_cdtl2/index.html
-2026-08-10 15:36:36,494  INFO      Getting tab from queue (has 1)
-2026-08-10 15:36:36,494  INFO      Got 4AC7
-2026-08-10 15:36:36,550  INFO      Reloading tab 4AC7 before return.
-2026-08-10 15:36:36,691  INFO      Putting tab 4AC7 back (queue size: 0).
-2026-08-10 15:36:36,692  INFO      Waiting for all cleanups to finish.
-2026-08-10 15:36:36,692  INFO      Exiting Kaleido.
-2026-08-10 15:36:36,692  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:36,693  INFO      shutil.rmtree worked.
-2026-08-10 15:36:36,693  INFO      Closing browser.
-2026-08-10 15:36:36,694  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:36,694  INFO      shutil.rmtree worked.
-2026-08-10 15:36:36,694  INFO      Closing browser.
-2026-08-10 15:36:36,694  INFO      Cancelling tasks.
-2026-08-10 15:36:36,694  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:36,839  INFO      TemporaryDirectory.cleanup() worked.
-2026-08-10 15:36:36,839  INFO      shutil.rmtree worked.
-2026-08-10 15:36:36,839  INFO      Cancelling tasks.
-2026-08-10 15:36:36,839  INFO      Exiting Kaleido/Choreo.
-2026-08-10 15:36:36,841  INFO      Saved â†’ /Users/sanjana/Smart_dairyvisionAI/outputs/simulation_thi_impact.png
-2026-08-10 15:36:36,847  INFO      
-======================================================================
-  STEP 7: Consolidated results for paper
-======================================================================
+2026-11-19 23:23:39,760  INFO        feed_weight_ratio        : mean=0.0430  std=0.0120
+2026-11-19 23:23:39,762  INFO        temp_humidity            : mean=2488.3343  std=738.2167
+2026-11-19 23:23:39,762  INFO        thi_squared              : mean=7962.0374  std=2388.0810
+2026-11-19 23:23:39,763  INFO        feed_thi_interaction     : mean=2037.3416  std=563.3795
+2026-11-19 23:23:39,763  INFO        age_weight_ratio         : mean=0.1223  std=0.0618
+2026-11-19 23:23:39,775  INFO      Feature matrix   : 3000 rows × 12 cols
+2026-11-19 23:23:39,782  INFO      Target stats     : mean=21.20  std=2.78  min=11.51  max=29.34
+2026-11-19 23:23:39,848  INFO      Engineered dataset saved -> C:\Users\megha\projects\Smart_dairyvisionAI\outputs\engineered_dataset.csv
+2026-11-19 23:23:42,432  INFO      Saved publication figure -> C:\Users\megha\projects\Smart_dairyvisionAI\outputs\model_test_error_metrics.png
+2026-11-19 23:23:42,432  INFO      Saved publication figure -> C:\Users\megha\projects\Smart_dairyvisionAI\research_outputs\figures\model_test_error_metrics.png
+2026-11-19 23:23:42,432  INFO      Saved research table -> C:\Users\megha\projects\Smart_dairyvisionAI\research_outputs\tables\model_test_error_metrics.csv
+2026-11-19 23:23:43,392  INFO      Saved model comparison R2 figure -> C:\Users\megha\projects\Smart_dairyvisionAI\outputs\model_comparison_r2.png
+2026-11-19 23:23:43,392  INFO      Saved model comparison R2 figure -> C:\Users\megha\projects\Smart_dairyvisionAI\research_outputs\figures\model_comparison_r2.png
+2026-11-19 23:23:43,420  INFO      Loaded model: XGBRegressor

@@ -252,6 +252,7 @@ def plot_feature_importance(df_imp: pd.DataFrame, model_name: str):
     return fig
 
 
+
 def train_xgboost_with_eval_history(
     model: XGBRegressor,
     X_train,
@@ -261,12 +262,14 @@ def train_xgboost_with_eval_history(
 ) -> XGBRegressor:
     """Re-train the tuned XGBoost model with eval history on the current split."""
     params = model.get_params(deep=False)
-    xgb = XGBRegressor(**params, verbosity=0)
+    params["verbosity"] = 0
+    params["eval_metric"] = "rmse"
+
+    xgb = XGBRegressor(**params)
     xgb.fit(
         X_train,
         y_train,
         eval_set=[(X_train, y_train), (X_test, y_test)],
-        eval_metric="rmse",
         verbose=False,
     )
     return xgb
